@@ -467,13 +467,18 @@ function contrast(a, b){
 }
 const countWords = t => (t.trim().match(/\S+/g) || []).length;
 const toParas = t => t.split(/\n+/).map(x => x.trim()).filter(Boolean);
+function storyId(text){
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < text.length; i++) hash = Math.imul(hash ^ text.charCodeAt(i), 0x01000193);
+  return (hash >>> 0).toString(16);
+}
 
 function passages(){
   const out = []; let cur = [], curP = '', n = 0;
   const flushP = () => { if (curP){ cur.push(curP.trim()); curP = ''; } };
   const flush = () => { flushP(); if (cur.length) out.push({paras:cur, words:n}); cur = []; n = 0; };
   for (const para of toParas(state.story)){
-    for (const sentence of para.match(/[^.!?]+[.!?]+["'”’)\]]*\s*|[^.!?]+$/g) || [para]){
+    for (const sentence of para.match(/.+?(?:[.!?]+["'”’)\]]*(?:\s+|$)|$)/gs) || [para]){
       curP += sentence; n += countWords(sentence);
       if (n >= PASSAGE_WORDS) flush();
     }
@@ -723,6 +728,16 @@ function renderTest(){
   }
   renderResults();
 }
+const timedOn = trials => trials.filter(t => t.wpm != null);
+const partKeys = trials => new Set(timedOn(trials).map(t => t.part != null ? t.storyId + ':' + t.part : null).filter(Boolean));
+function speedsComparable(rows){
+  const timed = rows.filter(r => timedOn(r.trials).length).map(r => partKeys(r.trials));
+  return timed.every((keys, i) => timed.slice(i + 1).every(other => [...keys].some(k => other.has(k))));
+}
+function partsLabel(trials){
+  const nums = [...new Set(timedOn(trials).map(t => t.part).filter(n => n != null))].sort((a, b) => a - b);
+  return nums.length ? `Timed on part${nums.length > 1 ? 's' : ''} ${nums.join(', ')}` : null;
+}
 function renderResults(){
   const groups = new Map();
   for (const t of state.trials){
@@ -740,14 +755,17 @@ function renderResults(){
     $('results').replaceChildren(h('p', {class:'muted'}, 'No results yet. Test a setup, change something, then test again.'));
     return;
   }
-  $('results').replaceChildren(...rows.map(r => {
-    const notes = r.trials.filter(t => t.note);
+  const warning = speedsComparable(rows) ? null : h('p', {id:'speedWarning', class:'warn'},
+    'Some setups have no timed part in common, so their speeds may differ because of the text, not the setup.');
+  $('results').replaceChildren(...(warning ? [warning] : []), ...rows.map(r => {
+    const notes = r.trials.filter(t => t.note), parts = partsLabel(r.trials);
     return h('div', {class:'result'},
       h('strong', null, labelFor(r.settings)),
       h('div', {class:'nums'},
         h('span', null, h('b', null, r.rating != null ? r.rating.toFixed(1) : '–'), ' of 5 ease'),
         h('span', null, h('b', null, r.wpm != null ? Math.round(r.wpm) : '–'), ' words/min'),
         h('span', null, h('b', null, r.trials.length), r.trials.length === 1 ? ' read' : ' reads')),
+      parts ? h('div', {class:'muted'}, parts) : null,
       notes.length ? h('ul', {class:'notes'}, ...notes.map(t => h('li', null, t.note))) : null,
       h('div', {class:'row', style:'margin-top:.4rem'},
         h('button', {class:'small', onclick:() => { state.settings = {...r.settings}; changed(); }}, 'Use'),
@@ -793,8 +811,7 @@ function useSample(){
 function startTrial(){
   const ps = passages();
   if (!ps.length) return;
-  const part = ps[state.passageIdx % ps.length];
-  state.passageIdx++; save();
+  const i = state.passageIdx % ps.length, part = ps[i];
   stopSpeech();
   document.body.classList.add('trial');
   $('paneB').hidden = true; $('labelA').hidden = true;
@@ -803,7 +820,7 @@ function startTrial(){
   measure(A);
   A.scroller.scrollTop = 0;
   A.scroller.focus();
-  trial = {words:part.words, start:performance.now()};
+  trial = {words:part.words, part:i + 1, parts:ps.length, storyId:storyId(state.story), start:performance.now()};
 }
 function endTrial(){
   document.body.classList.remove('trial');
@@ -837,8 +854,8 @@ function downloadCsv(){
     if (typeof v === 'string' && /^[=+\-@]/.test(x)) x = "'" + x;
     return '"' + x.replace(/"/g, '""') + '"';
   };
-  const head = ['date', 'setup', 'words', 'seconds', 'wpm', 'ease_1_to_5', 'note', ...KEYS];
-  const rows = state.trials.map(t => [t.at, labelFor(t.settings), t.words, t.ms != null ? Math.round(t.ms/1000) : null, t.wpm, t.rating, t.note, ...KEYS.map(k => t.settings[k])]);
+  const head = ['date', 'setup', 'words', 'seconds', 'wpm', 'ease_1_to_5', 'part', 'parts_in_story', 'story_id', 'note', ...KEYS];
+  const rows = state.trials.map(t => [t.at, labelFor(t.settings), t.words, t.ms != null ? Math.round(t.ms/1000) : null, t.wpm, t.rating, t.part, t.parts, t.storyId, t.note, ...KEYS.map(k => t.settings[k])]);
   const csv = [head, ...rows].map(r => r.map(cell).join(',')).join('\r\n');
   const url = URL.createObjectURL(new Blob(['﻿' + csv], {type:'text/csv;charset=utf-8'}));
   const a = h('a', {href:url, download:'reading-aid-results.csv'});
@@ -1042,11 +1059,12 @@ function init(){
   applyLink();
 
   $('startTrial').addEventListener('click', startTrial);
-  $('justRate').addEventListener('click', () => openResult({words:null, ms:null, wpm:null}));
+  $('justRate').addEventListener('click', () => openResult({words:null, part:null, parts:null, storyId:null, ms:null, wpm:null}));
   $('finishTrial').addEventListener('click', () => {
     const ms = performance.now() - trial.start;
     const t = endTrial();
-    openResult({words:t.words, ms, wpm:Math.round(t.words / (ms / 60000))});
+    state.passageIdx++; save();
+    openResult({words:t.words, part:t.part, parts:t.parts, storyId:t.storyId, ms, wpm:Math.round(t.words / (ms / 60000))});
   });
   $('cancelTrial').addEventListener('click', () => { endTrial(); renderTest(); });
   addEventListener('keydown', e => { if (e.key === 'Escape' && trial){ endTrial(); renderTest(); } });

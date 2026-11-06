@@ -1,0 +1,11 @@
+{
+  "name": "jessential",
+  "private": true,
+  "description": "Development tooling only. The site itself has no dependencies or build step.",
+  "scripts": {
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1"
+  }
+}

@@ -8,6 +8,16 @@ Push this folder to a GitHub repository. Then go to **Settings → Pages**, and 
 
 To run it locally, use `python3 -m http.server`.
 
+## Tests
+
+The site has no dependencies, but its browser tests use [Playwright](https://playwright.dev) and need Node and Python 3.
+
+```sh
+npm install
+npx playwright install chromium
+npm test
+```
+
 ## Fonts
 
 The `fonts/` folder holds Latin subsets of OpenDyslexic, Atkinson Hyperlegible, Lexend, Andika and Comic Neue, from [Fontsource](https://fontsource.org). All are under the SIL Open Font License, and each licence file is next to its font. Characters outside the Latin subset use a fallback font.
