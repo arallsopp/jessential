@@ -36,9 +36,9 @@ test.beforeEach(async ({ page }) => {
   await page.goto('/index.html');
 });
 
-async function holdNanDoor(page) {
-  await page.locator('#nanDoor').dispatchEvent('pointerdown');
-  await expect(page.locator('#nanView')).toBeVisible({ timeout: 3000 });
+async function holdPamDoor(page) {
+  await page.locator('#pamDoor').dispatchEvent('pointerdown');
+  await expect(page.locator('#pamView')).toBeVisible({ timeout: 3000 });
 }
 async function addStory(page, title, text) {
   await page.fill('#newTitle', title);
@@ -47,7 +47,7 @@ async function addStory(page, title, text) {
 }
 const openKite = page => page.getByRole('button', { name: 'The Runaway Kite' }).click();
 const articleText = page => page.locator('#paneA article').innerText();
-const backHome = page => page.click('#nanBack');
+const backHome = page => page.click('#pamBack');
 
 test.describe("Jessica's home", () => {
   test('opens on her stories, with no settings or tabs', async ({ page }) => {
@@ -58,16 +58,16 @@ test.describe("Jessica's home", () => {
     await expect(page.locator('#topBar')).toBeHidden();
   });
 
-  test("a quick tap does not open Nan's page", async ({ page }) => {
-    const door = page.locator('#nanDoor');
+  test("a quick tap does not open Pam's page", async ({ page }) => {
+    const door = page.locator('#pamDoor');
     await door.dispatchEvent('pointerdown');
     await door.dispatchEvent('pointerup');
     await page.waitForTimeout(1400);
-    await expect(page.locator('#nanView')).toBeHidden();
+    await expect(page.locator('#pamView')).toBeHidden();
   });
 
-  test("pressing and holding opens Nan's page", async ({ page }) => {
-    await holdNanDoor(page);
+  test("pressing and holding opens Pam's page", async ({ page }) => {
+    await holdPamDoor(page);
     await backHome(page);
     await expect(page.locator('#homeView')).toBeVisible();
   });
@@ -114,7 +114,7 @@ test.describe('reading a story', () => {
     await expect(page.locator('#pageNum')).toHaveText(/^Page 3 of/);
   });
 
-  test('finishing celebrates, logs it for Nan and starts over next time', async ({ page }) => {
+  test('finishing celebrates, logs it for Pam and starts over next time', async ({ page }) => {
     await openKite(page);
     const total = await page.evaluate(() => pagesOf(state.stories[0]).length);
     for (let i = 1; i < total; i++) await page.click('#nextPage');
@@ -125,8 +125,8 @@ test.describe('reading a story', () => {
     await page.click('#doneAgain');
     await expect(page.locator('#pageNum')).toHaveText(/^Page 1 of/);
     await page.click('#readHome');
-    await holdNanDoor(page);
-    await expect(page.locator('#nanStories')).toContainText('Finished once');
+    await holdPamDoor(page);
+    await expect(page.locator('#pamStories')).toContainText('Finished once');
   });
 
   test('uses her chosen look', async ({ page }) => {
@@ -306,7 +306,7 @@ test.describe('reading checks', () => {
   }
 
   test('shows Jessica no timer or number, during or after', async ({ page }) => {
-    await holdNanDoor(page);
+    await holdPamDoor(page);
     await page.click('#startCheck');
     await expect(page.locator('#readBar')).toBeHidden();
     await expect(page.locator('#checkBar')).not.toContainText(/\d/);
@@ -318,16 +318,16 @@ test.describe('reading checks', () => {
     await expect(page.locator('#doneAgain')).toBeHidden();
   });
 
-  test('tells Nan then and now, using a new passage each time', async ({ page }) => {
-    await holdNanDoor(page);
+  test('tells Pam then and now, using a new passage each time', async ({ page }) => {
+    await holdPamDoor(page);
     await expect(page.locator('#thenNow')).toContainText('No checks yet');
     await timedCheck(page, 120);
     await page.click('#doneHome');
-    await holdNanDoor(page);
+    await holdPamDoor(page);
     await expect(page.locator('#thenNow')).toContainText('One check saved');
     await timedCheck(page, 60);
     await page.click('#doneHome');
-    await holdNanDoor(page);
+    await holdPamDoor(page);
     const c = await page.evaluate(() => state.checks.map(x => ({ id: x.id, wpm: x.wpm })));
     expect(c[0].id).toBe('mitten');
     expect(c[1].id).toBe('boat');
@@ -338,7 +338,7 @@ test.describe('reading checks', () => {
   });
 
   test('does not save a mis-tap', async ({ page }) => {
-    await holdNanDoor(page);
+    await holdPamDoor(page);
     await page.click('#startCheck');
     await page.click('#finishCheck');
     await expect(page.locator('#checkStatus')).toContainText("wasn't saved");
@@ -346,7 +346,7 @@ test.describe('reading checks', () => {
   });
 
   test('cancelling saves nothing and reuses the passage', async ({ page }) => {
-    await holdNanDoor(page);
+    await holdPamDoor(page);
     await page.click('#startCheck');
     await page.click('#cancelCheck');
     expect(await page.evaluate(() => state.checks.length)).toBe(0);
@@ -354,11 +354,11 @@ test.describe('reading checks', () => {
     await expect(page.locator('#paneA article')).toContainText('red mitten');
   });
 
-  test('Nan can delete a bad check', async ({ page }) => {
-    await holdNanDoor(page);
+  test('Pam can delete a bad check', async ({ page }) => {
+    await holdPamDoor(page);
     await timedCheck(page, 120);
     await page.click('#doneHome');
-    await holdNanDoor(page);
+    await holdPamDoor(page);
     await page.locator('#checkList button').click();
     await expect(page.locator('#checkList li')).toHaveCount(0);
     expect(await page.evaluate(() => state.checks.length)).toBe(0);
@@ -368,7 +368,7 @@ test.describe('reading checks', () => {
     await page.evaluate(() => {
       state.checks = CHECKS.map(c => ({ id: c.id, words: 100, ms: 90000, wpm: 66, at: '2026-01-01T10:00:00Z', settings: {} }));
     });
-    await holdNanDoor(page);
+    await holdPamDoor(page);
     await expect(page.locator('#checkRepeat')).toBeVisible();
   });
 
@@ -379,9 +379,9 @@ test.describe('reading checks', () => {
   });
 });
 
-test.describe("Nan's page", () => {
+test.describe("Pam's page", () => {
   test('adds a story that appears on the shelf', async ({ page }) => {
-    await holdNanDoor(page);
+    await holdPamDoor(page);
     await addStory(page, 'Otters', 'The otter swam. It was fun.');
     await backHome(page);
     await page.getByRole('button', { name: 'Otters' }).click();
@@ -391,16 +391,16 @@ test.describe("Nan's page", () => {
   });
 
   test('needs story text, but makes up a title if there is none', async ({ page }) => {
-    await holdNanDoor(page);
+    await holdPamDoor(page);
     await page.click('#saveStory');
     await expect(page.locator('#storyStatus')).toContainText('story first');
     await addStory(page, '', 'One two three four five six seven.');
-    await expect(page.locator('#nanStories')).toContainText('One two three four five');
+    await expect(page.locator('#pamStories')).toContainText('One two three four five');
   });
 
   test('edits a story and starts it from the beginning', async ({ page }) => {
     await page.evaluate(() => { state.stories[0].page = 3; });
-    await holdNanDoor(page);
+    await holdPamDoor(page);
     await page.getByRole('button', { name: 'Edit The Runaway Kite' }).click();
     await expect(page.locator('#newTitle')).toHaveValue('The Runaway Kite');
     await addStory(page, 'New title', 'New words.');
@@ -408,14 +408,14 @@ test.describe("Nan's page", () => {
   });
 
   test('deletes a story', async ({ page }) => {
-    await holdNanDoor(page);
+    await holdPamDoor(page);
     await page.getByRole('button', { name: 'Delete The Runaway Kite' }).click();
     await backHome(page);
-    await expect(page.locator('#shelf')).toContainText('Nan can add a story');
+    await expect(page.locator('#shelf')).toContainText('Pam can add a story');
   });
 
   test('shows a title as plain text', async ({ page }) => {
-    await holdNanDoor(page);
+    await holdPamDoor(page);
     await addStory(page, '<img src=x onerror="window.hacked=1">', 'Words.');
     await backHome(page);
     await expect(page.locator('#shelf img')).toHaveCount(0);
@@ -423,19 +423,19 @@ test.describe("Nan's page", () => {
   });
 
   test('shows the Home Screen steps only in iPad Safari', async ({ page }) => {
-    await holdNanDoor(page);
-    await page.evaluate(() => { Object.defineProperty(navigator, 'standalone', { value: false, configurable: true }); renderNan(); });
-    await expect(page.locator('#nanSetup')).toBeVisible();
-    await page.evaluate(() => { Object.defineProperty(navigator, 'standalone', { value: true, configurable: true }); renderNan(); });
-    await expect(page.locator('#nanSetup')).toBeHidden();
+    await holdPamDoor(page);
+    await page.evaluate(() => { Object.defineProperty(navigator, 'standalone', { value: false, configurable: true }); renderPam(); });
+    await expect(page.locator('#pamSetup')).toBeVisible();
+    await page.evaluate(() => { Object.defineProperty(navigator, 'standalone', { value: true, configurable: true }); renderPam(); });
+    await expect(page.locator('#pamSetup')).toBeHidden();
   });
 
   test('can reach the full tools and come back', async ({ page }) => {
-    await holdNanDoor(page);
+    await holdPamDoor(page);
     await page.click('#openAdvanced');
     await expect(page.locator('#tab-test')).toBeVisible();
     await page.click('#advancedBack');
-    await expect(page.locator('#nanView')).toBeVisible();
+    await expect(page.locator('#pamView')).toBeVisible();
     await backHome(page);
     await expect(page.locator('#tabs')).toBeHidden();
   });
@@ -445,7 +445,7 @@ test.describe("Nan's page", () => {
       state.settings.font = 'lexend';
       state.checks = [{ id: 'cat', words: 98, ms: 90000, wpm: 65, at: '2026-01-01T10:00:00Z', settings: {} }];
     });
-    await holdNanDoor(page);
+    await holdPamDoor(page);
     await addStory(page, 'Keep me', 'Words to keep.');
     const [download] = await Promise.all([page.waitForEvent('download'), page.click('#backup')]);
     const file = test.info().outputPath('copy.json');
@@ -459,7 +459,7 @@ test.describe("Nan's page", () => {
   });
 
   test('refuses a file that is not a safe copy', async ({ page }) => {
-    await holdNanDoor(page);
+    await holdPamDoor(page);
     const file = test.info().outputPath('bad.json');
     fs.writeFileSync(file, '{"nope":1}');
     await page.locator('#restoreFile').setInputFiles(file);

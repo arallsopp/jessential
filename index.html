@@ -158,7 +158,7 @@ article p{margin:0 0 calc(var(--r-pg)*1em)}
   .trial-bar{position:sticky;bottom:0}
 }
 
-/* ---------- Jessica's screens and Nan's page ---------- */
+/* ---------- Jessica's screens and Pam's page ---------- */
 .view{flex:1;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;padding:max(1.5rem,env(safe-area-inset-top)) max(1.5rem,env(safe-area-inset-right)) max(1.5rem,env(safe-area-inset-bottom)) max(1.5rem,env(safe-area-inset-left))}
 .view button{touch-action:manipulation}
 .view-inner{max-width:760px;margin:0 auto}
@@ -167,11 +167,11 @@ article p{margin:0 0 calc(var(--r-pg)*1em)}
 .big-card small{display:block;font-size:1rem;font-weight:400;opacity:.8}
 .big-card.game-card{background:var(--ui-accent);border-color:var(--ui-accent);color:var(--ui-on-accent);margin-bottom:1.75rem}
 .shelf-title{font-size:1.25rem;margin:0 0 .75rem}
-.nan-door{position:relative;overflow:hidden;display:block;margin:2rem auto 0;min-height:48px;padding:.3rem 1.25rem;color:var(--ui-muted);-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:none}
-.nan-door small{display:block;font-size:.8rem}
-.nan-door::before{content:"";position:absolute;inset:0;background:var(--ui-soft);transform:scaleX(0);transform-origin:left;z-index:-1}
-.nan-door{isolation:isolate}
-.nan-door.holding::before{transform:scaleX(1);transition:transform 1.2s linear}
+.pam-door{position:relative;overflow:hidden;display:block;margin:2rem auto 0;min-height:48px;padding:.3rem 1.25rem;color:var(--ui-muted);-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:none}
+.pam-door small{display:block;font-size:.8rem}
+.pam-door::before{content:"";position:absolute;inset:0;background:var(--ui-soft);transform:scaleX(0);transform-origin:left;z-index:-1}
+.pam-door{isolation:isolate}
+.pam-door.holding::before{transform:scaleX(1);transition:transform 1.2s linear}
 
 .game{display:flex;flex-direction:column;gap:1rem}
 .game-top{display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex:none}
@@ -202,15 +202,15 @@ html.immersive body{height:100dvh}
 .reading .scroller{touch-action:manipulation}
 .reading .w{cursor:pointer}
 
-.nan-section{padding:1rem;margin:0 0 1rem;background:var(--ui-panel);border:1px solid var(--ui-line);border-radius:12px}
-.nan-section h2{margin:0 0 .5rem;font-size:1.15rem}
-.nan-section textarea{min-height:10rem;margin:.5rem 0}
-.nan-list{list-style:none;margin:.5rem 0 0;padding:0}
-.nan-list li{padding:.6rem 0;border-top:1px solid var(--ui-line)}
-.nan-list strong{display:block}
+.pam-section{padding:1rem;margin:0 0 1rem;background:var(--ui-panel);border:1px solid var(--ui-line);border-radius:12px}
+.pam-section h2{margin:0 0 .5rem;font-size:1.15rem}
+.pam-section textarea{min-height:10rem;margin:.5rem 0}
+.pam-list{list-style:none;margin:.5rem 0 0;padding:0}
+.pam-list li{padding:.6rem 0;border-top:1px solid var(--ui-line)}
+.pam-list strong{display:block}
 .then-now{font-size:1.15rem;margin:.25rem 0 .5rem}
-.nan-setup{background:var(--ui-soft);border-color:var(--ui-accent)}
-.nan-setup ol{margin:.25rem 0 .5rem;padding-left:1.25rem}
+.pam-setup{background:var(--ui-soft);border-color:var(--ui-accent)}
+.pam-setup ol{margin:.25rem 0 .5rem;padding-left:1.25rem}
 
 @media (max-width:640px){
   .game-cards{grid-template-columns:1fr}
@@ -232,7 +232,7 @@ html.immersive body{height:100dvh}
     <button id="playGame" class="big-card game-card">Which is easier?<small>Play a game to find your best look</small></button>
     <h2 class="shelf-title">Your stories</h2>
     <div id="shelf"></div>
-    <button id="nanDoor" class="nan-door">Nan's page<small>Press and hold</small></button>
+    <button id="pamDoor" class="pam-door">Pam's page<small>Press and hold</small></button>
   </div>
 </section>
 
@@ -269,14 +269,14 @@ html.immersive body{height:100dvh}
   </div>
 </section>
 
-<section class="view" id="nanView" hidden>
+<section class="view" id="pamView" hidden>
   <div class="view-inner">
     <div class="row" style="justify-content:space-between;margin-bottom:1rem">
-      <h1 style="font-size:1.5rem">Nan's page</h1>
-      <button id="nanBack">Back to Jessica's stories</button>
+      <h1 style="font-size:1.5rem">Pam's page</h1>
+      <button id="pamBack">Back to Jessica's stories</button>
     </div>
 
-    <section class="nan-section nan-setup" id="nanSetup" hidden>
+    <section class="pam-section pam-setup" id="pamSetup" hidden>
       <h2>Do this first, so nothing gets lost</h2>
       <p>Safari can delete saved stories and results from a website that hasn't been opened for a week. A Home Screen icon avoids this.</p>
       <ol>
@@ -287,19 +287,19 @@ html.immersive body{height:100dvh}
       <p class="muted" style="margin:0">Anything saved in Safari doesn't carry over to the icon, so add stories after you've done this.</p>
     </section>
 
-    <section class="nan-section">
+    <section class="pam-section">
       <h2>Then and now</h2>
       <div id="thenNow"></div>
       <p>Every few weeks, ask Jessica to read a new short passage aloud to you. She won't see a timer or a number, so there's nothing to race.</p>
       <button id="startCheck" class="primary">Start a reading check</button>
       <p class="muted warn" id="checkStatus" role="status" style="margin:.5rem 0 0"></p>
       <p class="muted" id="checkRepeat" style="margin:.5rem 0 0" hidden>She has now read all six passages, so these will be repeats. Rereading is usually faster, so later speeds may look better than they are.</p>
-      <ul class="nan-list" id="checkList"></ul>
+      <ul class="pam-list" id="checkList"></ul>
     </section>
 
-    <section class="nan-section">
+    <section class="pam-section">
       <h2>Jessica's stories</h2>
-      <ul class="nan-list" id="nanStories"></ul>
+      <ul class="pam-list" id="pamStories"></ul>
       <h2 id="storyFormTitle" style="margin-top:1rem">Add a story</h2>
       <label class="label" for="newTitle">Title</label>
       <input type="text" id="newTitle" maxlength="80">
@@ -312,7 +312,7 @@ html.immersive body{height:100dvh}
       <p class="muted warn" id="storyStatus" role="status" style="margin:.5rem 0 0"></p>
     </section>
 
-    <section class="nan-section">
+    <section class="pam-section">
       <h2>Keep a safe copy</h2>
       <p class="muted">Saves the stories, look and reading checks as a file, in case the iPad is reset or replaced.</p>
       <div class="row">
@@ -328,7 +328,7 @@ html.immersive body{height:100dvh}
 </section>
 
 <header class="top" id="topBar">
-  <button id="advancedBack" class="small">Back to Nan's page</button>
+  <button id="advancedBack" class="small">Back to Pam's page</button>
   <h1>Jessential!</h1>
   <span class="spacer"></span>
   <label class="in-top">Compare with <select id="compare"></select></label>
@@ -1189,7 +1189,7 @@ function applyLink(){
 }
 
 /* ---------- screens ---------- */
-const VIEWS = {home:'homeView', game:'gameView', done:'doneView', nan:'nanView'};
+const VIEWS = {home:'homeView', game:'gameView', done:'doneView', pam:'pamView'};
 function show(name){
   stopSpeech();
   currentScreen = name;
@@ -1204,7 +1204,7 @@ function show(name){
   $('checkBar').hidden = name !== 'check';
   if (inReader){ $('paneB').hidden = true; $('labelA').hidden = true; }
   if (name === 'home') renderShelf();
-  if (name === 'nan') renderNan();
+  if (name === 'pam') renderPam();
   if (name === 'advanced'){
     setStoryControls();
     refreshReader();
@@ -1231,7 +1231,7 @@ function renderShelf(){
     Object.assign(card.style, {fontFamily:fontOf(state.settings).css, color:state.settings.fg, background:state.settings.bg});
     return card;
   }));
-  if (!state.stories.length) $('shelf').append(h('p', {class:'muted'}, 'Nan can add a story.'));
+  if (!state.stories.length) $('shelf').append(h('p', {class:'muted'}, 'Pam can add a story.'));
 }
 let reading = null;
 function openStory(id){
@@ -1316,7 +1316,7 @@ function keepLook(){
   show('home');
 }
 
-/* ---------- Nan's reading checks ---------- */
+/* ---------- Pam's reading checks ---------- */
 let check = null;
 function startCheck(){
   const passage = CHECKS[state.checks.length % CHECKS.length];
@@ -1332,7 +1332,7 @@ function finishCheck(){
   // Reading aloud at this speed isn't plausible, so it was probably a mis-tap.
   if (wpm > 300){
     $('checkStatus').textContent = "That was too quick to be a real reading, so it wasn't saved.";
-    show('nan');
+    show('pam');
     return;
   }
   state.checks.push({id:c.id, words:c.words, ms:Math.round(ms), wpm, at:new Date().toISOString(), settings:{...state.settings}});
@@ -1340,8 +1340,8 @@ function finishCheck(){
   $('doneAgain').hidden = true;
   show('done');
 }
-function renderNan(){
-  $('nanSetup').hidden = navigator.standalone !== false;
+function renderPam(){
+  $('pamSetup').hidden = navigator.standalone !== false;
   const cs = state.checks, first = cs[0], latest = cs[cs.length - 1];
   $('thenNow').replaceChildren(...(cs.length > 1
     ? [h('p', {class:'then-now'}, `${niceDate(first.at)}: about ${first.wpm} words a minute.`, h('br'), `${niceDate(latest.at)}: about ${latest.wpm} words a minute.`),
@@ -1353,9 +1353,9 @@ function renderNan(){
     h('button', {class:'small', style:'margin-top:.3rem', 'aria-label':`Delete the check from ${niceDate(c.at)}`, onclick:() => {
       if (!confirm('Delete this reading check?')) return;
       state.checks = state.checks.filter(o => o !== c);
-      saveNow(); renderNan();
+      saveNow(); renderPam();
     }}, 'Delete'))));
-  $('nanStories').replaceChildren(...state.stories.map(story => {
+  $('pamStories').replaceChildren(...state.stories.map(story => {
     const n = story.reads.length;
     return h('li', null, h('strong', null, story.title),
       h('span', {class:'muted'}, n ? `Finished ${n === 1 ? 'once' : n + ' times'}, last on ${niceDate(story.reads[n - 1])}` : 'Not finished yet'),
@@ -1365,7 +1365,7 @@ function renderNan(){
           if (!confirm(`Delete "${story.title}"?`)) return;
           state.stories = state.stories.filter(o => o !== story);
           if (editing === story) clearStoryForm();
-          saveNow(); renderNan();
+          saveNow(); renderPam();
         }}, 'Delete')));
   }));
 }
@@ -1395,7 +1395,7 @@ function saveStory(){
   }
   clearStoryForm();
   $('storyStatus').textContent = '';
-  saveNow(); renderNan();
+  saveNow(); renderPam();
 }
 
 /* ---------- safe copy ---------- */
@@ -1433,19 +1433,19 @@ async function restore(file){
   location.reload();
 }
 
-/* ---------- Nan's door: a press and hold, so it isn't opened by accident ---------- */
-function wireNanDoor(){
-  const door = $('nanDoor');
+/* ---------- Pam's door: a press and hold, so it isn't opened by accident ---------- */
+function wirePamDoor(){
+  const door = $('pamDoor');
   let timer = 0;
   const release = () => { clearTimeout(timer); door.classList.remove('holding'); };
   door.addEventListener('pointerdown', () => {
     door.classList.add('holding');
-    timer = setTimeout(() => { release(); show('nan'); }, 1200);
+    timer = setTimeout(() => { release(); show('pam'); }, 1200);
   });
   for (const type of ['pointerup', 'pointerleave', 'pointercancel']) door.addEventListener(type, release);
   door.addEventListener('contextmenu', e => e.preventDefault());
   // A keyboard press has no pointer to hold, and detail is 0 for keyboard clicks.
-  door.addEventListener('click', e => { if (e.detail === 0) show('nan'); });
+  door.addEventListener('click', e => { if (e.detail === 0) show('pam'); });
 }
 
 /* ---------- read aloud ---------- */
@@ -1569,11 +1569,11 @@ function init(){
   $('nextPage').addEventListener('click', nextPage);
   $('doneAgain').addEventListener('click', () => openStory(reading.story.id));
   $('doneHome').addEventListener('click', () => show('home'));
-  wireNanDoor();
-  $('nanBack').addEventListener('click', () => show('home'));
+  wirePamDoor();
+  $('pamBack').addEventListener('click', () => show('home'));
   $('startCheck').addEventListener('click', startCheck);
   $('finishCheck').addEventListener('click', finishCheck);
-  $('cancelCheck').addEventListener('click', () => { check = null; show('nan'); });
+  $('cancelCheck').addEventListener('click', () => { check = null; show('pam'); });
   $('saveStory').addEventListener('click', saveStory);
   $('cancelEdit').addEventListener('click', clearStoryForm);
   $('backup').addEventListener('click', backup);
@@ -1582,7 +1582,7 @@ function init(){
   $('openAdvanced').addEventListener('click', () => show('advanced'));
   $('advancedBack').addEventListener('click', () => {
     if (location.hash) history.replaceState(null, '', location.pathname + location.search);
-    show('nan');
+    show('pam');
   });
 
   let storyTimer = 0;
