@@ -5,6 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Jessential!</title>
 <meta name="description" content="Paste a story and find out which fonts, colours and reading aids make it easiest to read.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Jessential!">
+<meta property="og:description" content="Paste a story and find out which fonts, colours and reading aids make it easiest to read.">
+<meta property="og:url" content="https://arallsopp.github.io/jessential/">
+<meta property="og:image" content="https://arallsopp.github.io/jessential/preview.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Jessential! The letters Aa shown in five fonts and colour combinations.">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23fdf6e3'/%3E%3Crect x='4' y='13' width='24' height='7' rx='2' fill='%23f2c94c'/%3E%3Cpath d='M7 8h18M7 16.500h18M7 25h12' stroke='%231f4e5f' stroke-width='2.500' stroke-linecap='round'/%3E%3C/svg%3E">
 <style>
 @font-face{font-family:"OpenDyslexic";src:url(fonts/opendyslexic-400.woff2) format("woff2");font-weight:400;font-display:swap}
@@ -103,6 +113,9 @@ input[type=color]{width:44px;height:36px;padding:2px;border:1px solid var(--ui-l
 .result .nums b{font-size:1.1rem}
 .notes li{font-size:.9rem;color:var(--ui-muted);margin-top:.2rem}
 .danger-zone{margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--ui-line)}
+.notice{flex:none;display:flex;flex-wrap:wrap;gap:.5rem 1rem;align-items:center;padding:.6rem 1rem;background:var(--ui-soft);border-bottom:1px solid var(--ui-line)}
+.notice p{margin:0;flex:1 1 16rem}
+.trial .notice{display:none}
 
 .stage{position:relative;min-height:0;min-width:0;display:flex;flex-direction:column;background:var(--ui-bg)}
 .panes{flex:1;min-height:0;display:flex;gap:2px}
@@ -210,6 +223,15 @@ article p{margin:0 0 calc(var(--r-pg)*1em)}
     </section>
 
     <section class="tabpanel" role="tabpanel" id="p-setups" aria-labelledby="tab-setups" hidden>
+      <div class="card">
+        <h2>Share the current setup</h2>
+        <p class="muted">The link opens this page with the current look and aids.</p>
+        <label class="toggle"><input type="checkbox" id="linkHideControls" checked><span>Open with the controls hidden</span></label>
+        <label class="toggle" id="linkStoryRow" hidden><input type="checkbox" id="linkStory"><span>Include my story<small>Anyone with the link can read it, and long links may get cut off.</small></span></label>
+        <button id="copyLink" class="primary">Copy link</button>
+        <p class="muted" id="linkStatus" role="status" style="margin:.5rem 0 0"></p>
+        <input type="text" id="linkField" readonly aria-label="Link to this setup" style="margin-top:.5rem" hidden>
+      </div>
       <h2><label for="setupName">Save the current look and aids</label></h2>
       <div class="row" style="flex-wrap:nowrap">
         <input type="text" id="setupName" placeholder="Name this setup" maxlength="60">
@@ -252,6 +274,13 @@ article p{margin:0 0 calc(var(--r-pg)*1em)}
   </aside>
 
   <main class="stage" id="stage">
+    <div class="notice" id="linkPrompt" role="group" aria-label="Story in this link" hidden>
+      <p>This link comes with its own story. Do you want to replace the story saved here?</p>
+      <div class="row">
+        <button id="linkUseStory" class="primary">Use the link's story</button>
+        <button id="linkKeepStory">Keep my story</button>
+      </div>
+    </div>
     <div class="panes" id="panes">
       <div class="pane" id="paneA">
         <div class="pane-label" id="labelA" hidden></div>
@@ -751,6 +780,7 @@ function setPanelHidden(v){
 function setStory(text){
   state.story = text; state.passageIdx = 0;
   storyParas = toParas(text);
+  $('linkStoryRow').hidden = !hasOwnStory();
   renderStoryInfo(); refreshReader(); renderTest(); save();
 }
 function useSample(){
@@ -814,6 +844,82 @@ function downloadCsv(){
   const a = h('a', {href:url, download:'reading-aid-results.csv'});
   document.body.append(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+/* ---------- shareable links ---------- */
+const hasOwnStory = () => state.story.trim() !== '' && state.story !== SAMPLE;
+function buildLink(){
+  const q = new URLSearchParams({v:'1'});
+  for (const k of KEYS){
+    const v = state.settings[k];
+    if (v === DEFAULTS[k]) continue;
+    q.set(k, typeof v === 'boolean' ? '1' : (k === 'fg' || k === 'bg') ? v.slice(1) : v);
+  }
+  if (state.story === SAMPLE) q.set('story', 'sample');
+  else if (hasOwnStory() && $('linkStory').checked) q.set('text', state.story);
+  if ($('linkHideControls').checked) q.set('view', 'read');
+  return location.origin + location.pathname + '#' + q;
+}
+async function copyLink(){
+  const url = buildLink();
+  const field = $('linkField');
+  const longNote = url.length > 2000 ? ' It is long, so some apps may cut it off.' : '';
+  field.value = url;
+  try {
+    await navigator.clipboard.writeText(url);
+    field.hidden = true;
+    $('linkStatus').textContent = 'Link copied.' + longNote;
+  } catch (e) {
+    field.hidden = false;
+    field.select();
+    $('linkStatus').textContent = 'This browser blocked copying, so copy the link from this box.' + longNote;
+  }
+}
+function settingsFromLink(q){
+  const s = {...DEFAULTS};
+  if (FONTS.some(f => f.id === q.get('font'))) s.font = q.get('font');
+  for (const k of ['fg', 'bg']){
+    const v = q.get(k);
+    if (/^[0-9a-f]{6}$/i.test(v || '')) s[k] = '#' + v.toLowerCase();
+  }
+  for (const c of SLIDERS){
+    const n = parseFloat(q.get(c.key));
+    if (Number.isFinite(n)) s[c.key] = Math.min(c.max, Math.max(c.min, n));
+  }
+  if (q.get('align') === 'justify') s.align = 'justify';
+  if (RULERS.some(r => r.id === q.get('ruler'))) s.ruler = q.get('ruler');
+  s.bionic = q.get('bionic') === '1';
+  s.stripes = q.get('stripes') === '1';
+  return s;
+}
+function loadLinkStory(text){
+  $('story').value = text;
+  setStory(text);
+  A.scroller.scrollTop = 0;
+}
+let linkStory = null;
+function applyLink(){
+  if (location.hash.length < 2) return;
+  const q = new URLSearchParams(location.hash.slice(1));
+  const hasSettings = q.has('v') || KEYS.some(k => q.has(k));
+  const story = q.get('story') === 'sample' ? SAMPLE : q.get('text');
+  if (!hasSettings && story == null) return;
+  history.replaceState(null, '', location.pathname + location.search);
+  if (trial) endTrial();
+  if (hasSettings){
+    state.settings = settingsFromLink(q);
+    state.compareId = '';
+    renderCompare();
+    changed();
+  }
+  $('linkPrompt').hidden = true;
+  if (story != null && story !== state.story){
+    if (hasOwnStory()){
+      linkStory = story;
+      $('linkPrompt').hidden = false;
+    } else loadLinkStory(story);
+  }
+  if (q.get('view') === 'read') setPanelHidden(true);
 }
 
 /* ---------- read aloud ---------- */
@@ -927,6 +1033,13 @@ function init(){
     renderCompare(); changed(); renderResults();
   });
   $('setupName').addEventListener('keydown', e => { if (e.key === 'Enter') $('saveSetup').click(); });
+
+  $('linkStoryRow').hidden = !hasOwnStory();
+  $('copyLink').addEventListener('click', copyLink);
+  $('linkUseStory').addEventListener('click', () => { $('linkPrompt').hidden = true; loadLinkStory(linkStory); });
+  $('linkKeepStory').addEventListener('click', () => { $('linkPrompt').hidden = true; });
+  addEventListener('hashchange', applyLink);
+  applyLink();
 
   $('startTrial').addEventListener('click', startTrial);
   $('justRate').addEventListener('click', () => openResult({words:null, ms:null, wpm:null}));
