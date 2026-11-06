@@ -1,0 +1,965 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jessential!</title>
+<meta name="description" content="Paste a story and find out which fonts, colours and reading aids make it easiest to read.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23fdf6e3'/%3E%3Crect x='4' y='13' width='24' height='7' rx='2' fill='%23f2c94c'/%3E%3Cpath d='M7 8h18M7 16.500h18M7 25h12' stroke='%231f4e5f' stroke-width='2.500' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+@font-face{font-family:"OpenDyslexic";src:url(fonts/opendyslexic-400.woff2) format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"OpenDyslexic";src:url(fonts/opendyslexic-700.woff2) format("woff2");font-weight:700;font-display:swap}
+@font-face{font-family:"Atkinson Hyperlegible";src:url(fonts/atkinson-hyperlegible-400.woff2) format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"Atkinson Hyperlegible";src:url(fonts/atkinson-hyperlegible-700.woff2) format("woff2");font-weight:700;font-display:swap}
+@font-face{font-family:"Lexend";src:url(fonts/lexend-400.woff2) format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"Lexend";src:url(fonts/lexend-700.woff2) format("woff2");font-weight:700;font-display:swap}
+@font-face{font-family:"Andika";src:url(fonts/andika-400.woff2) format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"Andika";src:url(fonts/andika-700.woff2) format("woff2");font-weight:700;font-display:swap}
+@font-face{font-family:"Comic Neue";src:url(fonts/comic-neue-400.woff2) format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"Comic Neue";src:url(fonts/comic-neue-700.woff2) format("woff2");font-weight:700;font-display:swap}
+
+:root{
+  color-scheme:light dark;
+  --ui-bg:#f4f1ea; --ui-panel:#fbfaf6; --ui-fg:#22262a; --ui-muted:#5c6369; --ui-line:#d9d4c8;
+  --ui-accent:#1f5f73; --ui-on-accent:#fff; --ui-soft:#e4eef0; --ui-warn:#9a4a10;
+}
+@media (prefers-color-scheme:dark){:root{
+  --ui-bg:#17191c; --ui-panel:#1f2226; --ui-fg:#e9e7e1; --ui-muted:#a4a9ae; --ui-line:#383c42;
+  --ui-accent:#7cc4d8; --ui-on-accent:#0e2a33; --ui-soft:#28363b; --ui-warn:#f0a868;
+}}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;background:var(--ui-bg);color:var(--ui-fg);font:400 16px/1.5 "Atkinson Hyperlegible",Arial,sans-serif;display:flex;flex-direction:column}
+h1{font-size:1.125rem;margin:0;font-weight:700}
+h2{font-size:1rem;margin:1.25rem 0 .5rem}
+h2:first-child{margin-top:0}
+p{margin:0 0 .75rem}
+.muted{color:var(--ui-muted);font-size:.9rem}
+.warn{color:var(--ui-warn)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+
+button,select,input[type=text],textarea{font:inherit;color:inherit}
+button{min-height:40px;padding:.3rem .8rem;background:var(--ui-panel);border:1px solid var(--ui-line);border-radius:8px;cursor:pointer}
+button:hover{border-color:var(--ui-accent)}
+button.primary{background:var(--ui-accent);border-color:var(--ui-accent);color:var(--ui-on-accent);font-weight:700}
+button.small{min-height:32px;padding:.1rem .6rem;font-size:.875rem}
+select,input[type=text]{min-height:40px;width:100%;padding:.3rem .5rem;background:var(--ui-panel);border:1px solid var(--ui-line);border-radius:8px}
+textarea{width:100%;min-height:45vh;padding:.75rem;background:var(--ui-panel);border:1px solid var(--ui-line);border-radius:8px;resize:vertical;line-height:1.5}
+:focus-visible{outline:3px solid var(--ui-accent);outline-offset:2px}
+.row{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center}
+
+.top{display:flex;gap:.75rem 1rem;align-items:center;flex-wrap:wrap;padding:.5rem 1rem;background:var(--ui-panel);border-bottom:1px solid var(--ui-line)}
+.top .spacer{flex:1}
+.top label{display:flex;align-items:center;gap:.5rem;white-space:nowrap}
+.top select{width:auto;max-width:15rem}
+
+.app{flex:1;min-height:0;display:grid;grid-template-columns:360px minmax(0,1fr)}
+.panel{min-height:0;display:flex;flex-direction:column;background:var(--ui-panel);border-right:1px solid var(--ui-line)}
+.panel-hidden .app,.trial .app{grid-template-columns:minmax(0,1fr)}
+.panel-hidden .panel,.trial .panel,.trial .top .in-top{display:none}
+
+.tabs{display:flex;border-bottom:1px solid var(--ui-line);flex:none}
+.tabs button{flex:1;min-height:44px;padding:0 .2rem;border:0;border-radius:0;background:none;border-bottom:3px solid transparent;color:var(--ui-muted)}
+.tabs button[aria-selected=true]{color:var(--ui-fg);font-weight:700;border-bottom-color:var(--ui-accent)}
+.tabs button:focus-visible{outline-offset:-3px}
+.tabpanel{flex:1;min-height:0;overflow:auto;padding:1rem}
+
+.choices{display:grid;gap:.375rem}
+.choice{display:block;cursor:pointer;position:relative}
+.choice input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.choice>span{display:block;padding:.45rem .7rem;border:2px solid var(--ui-line);border-radius:8px}
+.choice:hover>span{border-color:var(--ui-accent)}
+.choice input:checked+span{border-color:var(--ui-accent);box-shadow:inset 0 0 0 1px var(--ui-accent)}
+.choice input:focus-visible+span{outline:3px solid var(--ui-accent);outline-offset:2px}
+.font-choice small{display:block;font:400 .8rem/1.3 "Atkinson Hyperlegible",Arial,sans-serif;color:var(--ui-muted)}
+.swatches{grid-template-columns:repeat(4,1fr)}
+.swatches .choice>span{padding:.35rem .1rem;text-align:center;font-size:.78rem;line-height:1.25;min-height:58px}
+.swatches b{display:block;font-size:1.1rem;font-weight:700}
+
+.field{margin:0 0 .9rem}
+.field label,.label{display:flex;justify-content:space-between;gap:.5rem;font-weight:700;margin-bottom:.15rem}
+.field output{font-weight:400;color:var(--ui-muted)}
+input[type=range]{width:100%;height:28px;margin:0;accent-color:var(--ui-accent)}
+.colours{display:flex;gap:1rem;align-items:center;flex-wrap:wrap;margin-top:.6rem}
+.colours label{display:flex;align-items:center;gap:.4rem}
+input[type=color]{width:44px;height:36px;padding:2px;border:1px solid var(--ui-line);border-radius:6px;background:none;cursor:pointer}
+.toggle{display:flex;gap:.6rem;align-items:flex-start;padding:.45rem 0;cursor:pointer}
+.toggle input{width:20px;height:20px;margin:.15rem 0 0;flex:none;accent-color:var(--ui-accent)}
+.toggle small{display:block;color:var(--ui-muted)}
+
+.setups,.notes{list-style:none;margin:0;padding:0}
+.setups li{padding:.6rem 0;border-top:1px solid var(--ui-line)}
+.setups strong{display:block}
+.setups .row{margin-top:.3rem}
+.badge{display:inline-block;padding:0 .4rem;border-radius:4px;background:var(--ui-soft);font-size:.78rem;font-weight:400;margin-left:.3rem}
+.card{padding:.8rem;margin-bottom:1rem;background:var(--ui-soft);border-radius:10px}
+.stat{font-size:1.5rem;font-weight:700;display:block;line-height:1.2}
+.ratings{display:grid;grid-template-columns:repeat(5,1fr);gap:.3rem;margin-bottom:.15rem}
+.ratings .choice>span{text-align:center;background:var(--ui-panel)}
+.scale{display:flex;justify-content:space-between;margin-bottom:.75rem}
+.result{padding:.7rem 0;border-top:1px solid var(--ui-line)}
+.result .nums{display:flex;gap:1.25rem;margin:.25rem 0}
+.result .nums b{font-size:1.1rem}
+.notes li{font-size:.9rem;color:var(--ui-muted);margin-top:.2rem}
+.danger-zone{margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--ui-line)}
+
+.stage{position:relative;min-height:0;min-width:0;display:flex;flex-direction:column;background:var(--ui-bg)}
+.panes{flex:1;min-height:0;display:flex;gap:2px}
+.pane{--r-font:Arial,sans-serif;--r-fg:#111;--r-bg:#fff;--r-size:20;--r-lh:1.6;--r-ls:0;--r-ws:0;--r-pg:1;--r-width:65;--r-align:left;
+  flex:1 1 0;min-width:0;display:flex;flex-direction:column;position:relative;overflow:hidden;background:var(--r-bg);color:var(--r-fg)}
+.pane-label{flex:none;padding:.2rem 1rem;font:400 .85rem/1.5 "Atkinson Hyperlegible",Arial,sans-serif;background:var(--ui-panel);color:var(--ui-fg);border-bottom:1px solid var(--ui-line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.clip{flex:1;min-height:0;position:relative;overflow:hidden}
+.scroller{position:relative;height:100%;overflow:auto}
+.scroller:focus-visible{outline-offset:-4px}
+article{margin:0 auto;padding:clamp(1rem,4vw,3rem) clamp(1rem,4vw,2.5rem) 40vh;max-width:calc(var(--r-width)*1ch + 2*clamp(1rem,4vw,2.5rem));
+  font-family:var(--r-font);font-size:calc(var(--r-size)*1px);line-height:var(--r-lh);letter-spacing:calc(var(--r-ls)*1em);word-spacing:calc(var(--r-ws)*1em);text-align:var(--r-align);overflow-wrap:break-word}
+article p{margin:0 0 calc(var(--r-pg)*1em)}
+.w.odd{background:color-mix(in srgb,var(--r-fg) 10%,transparent)}
+.w.speaking{background:#ffd84d;color:#111;border-radius:3px}
+.band{position:absolute;left:0;right:0;pointer-events:none}
+.band.band-tint{background:color-mix(in srgb,var(--r-fg) 13%,transparent);border-block:2px solid color-mix(in srgb,var(--r-fg) 35%,transparent)}
+.band.band-mask{box-shadow:0 0 0 100vmax color-mix(in srgb,var(--r-bg) 80%,transparent)}
+.empty{font:400 1.125rem/1.5 "Atkinson Hyperlegible",Arial,sans-serif;letter-spacing:0;word-spacing:0}
+.empty h2{font-size:1.75rem;margin:0 0 .5rem}
+.empty button{background:#fff;color:#111;border-color:#777}
+
+.trial-bar{flex:none;display:flex;justify-content:center;gap:.75rem;padding:.75rem;background:var(--ui-panel);border-top:1px solid var(--ui-line)}
+.trial-bar .primary{min-height:52px;padding:0 2rem;font-size:1.125rem}
+
+@media (max-width:800px){
+  html,body{height:auto}
+  .app{display:block}
+  .panel{border-right:0;border-bottom:1px solid var(--ui-line)}
+  .tabpanel{overflow:visible}
+  textarea{min-height:30vh}
+  .panes{flex-direction:column}
+  .pane{flex:none;height:85svh}
+  .compare-on .pane{height:50svh}
+  .top label{white-space:normal}
+  .trial-bar{position:sticky;bottom:0}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <h1>Jessential!</h1>
+  <span class="spacer"></span>
+  <label class="in-top">Compare with <select id="compare"></select></label>
+  <button id="togglePanel" class="in-top" aria-expanded="true">Hide controls</button>
+</header>
+
+<div class="app">
+  <aside class="panel" aria-label="Controls">
+    <div class="tabs" role="tablist" id="tabs">
+      <button role="tab" id="tab-story" aria-controls="p-story">Story</button>
+      <button role="tab" id="tab-look" aria-controls="p-look">Look</button>
+      <button role="tab" id="tab-aids" aria-controls="p-aids">Aids</button>
+      <button role="tab" id="tab-setups" aria-controls="p-setups">Setups</button>
+      <button role="tab" id="tab-test" aria-controls="p-test">Test</button>
+    </div>
+
+    <section class="tabpanel" role="tabpanel" id="p-story" aria-labelledby="tab-story">
+      <label class="label" for="story">Paste your story <span class="muted" id="wordCount"></span></label>
+      <textarea id="story" placeholder="Paste a story here. It appears on the right as you paste."></textarea>
+      <p class="muted" style="margin-top:.5rem">Your story and results stay in this browser. Nothing is uploaded.</p>
+      <button id="sample">Use the sample story</button>
+      <div class="danger-zone">
+        <button id="wipe" class="small">Erase all saved data</button>
+        <p class="muted" style="margin-top:.4rem" id="saveStatus" role="status"></p>
+      </div>
+    </section>
+
+    <section class="tabpanel" role="tabpanel" id="p-look" aria-labelledby="tab-look" hidden>
+      <h2 id="h-font">Font</h2>
+      <div class="choices" id="fonts" role="radiogroup" aria-labelledby="h-font"></div>
+      <h2 id="h-col">Colours</h2>
+      <div class="choices swatches" id="themes" role="radiogroup" aria-labelledby="h-col"></div>
+      <div class="colours">
+        <label>Text <input type="color" id="fg"></label>
+        <label>Background <input type="color" id="bg"></label>
+      </div>
+      <p class="muted" id="contrast" style="margin-top:.5rem"></p>
+      <h2>Size and spacing</h2>
+      <div id="sliders"></div>
+      <div class="field">
+        <label for="align">Text alignment</label>
+        <select id="align">
+          <option value="left">Left, with an uneven right edge</option>
+          <option value="justify">Justified, with even edges</option>
+        </select>
+      </div>
+      <button id="resetLook">Reset look</button>
+    </section>
+
+    <section class="tabpanel" role="tabpanel" id="p-aids" aria-labelledby="tab-aids" hidden>
+      <h2 id="h-ruler">Line guide</h2>
+      <div class="choices" id="rulers" role="radiogroup" aria-labelledby="h-ruler"></div>
+      <p class="muted" style="margin-top:.5rem">Move the pointer over the text, tap a line, or click the text and use the ↑ and ↓ keys.</p>
+      <h2>Text aids</h2>
+      <label class="toggle"><input type="checkbox" id="bionic"><span>Bold word starts<small>Makes the first part of each word bold.</small></span></label>
+      <label class="toggle"><input type="checkbox" id="stripes"><span>Line stripes<small>Shades every second line to help you keep your place.</small></span></label>
+      <div id="ttsBox">
+        <h2>Read aloud</h2>
+        <p class="muted">Highlights each word as it is read, if your device's voice supports it.</p>
+        <div class="field"><label for="ttsRate">Speed <output id="ttsRateOut"></output></label>
+          <input type="range" id="ttsRate" min="0.5" max="1.5" step="0.1"></div>
+        <div class="field"><label for="voice">Voice</label><select id="voice"></select></div>
+        <button id="speak" class="primary">Read aloud</button>
+      </div>
+    </section>
+
+    <section class="tabpanel" role="tabpanel" id="p-setups" aria-labelledby="tab-setups" hidden>
+      <h2><label for="setupName">Save the current look and aids</label></h2>
+      <div class="row" style="flex-wrap:nowrap">
+        <input type="text" id="setupName" placeholder="Name this setup" maxlength="60">
+        <button id="saveSetup" class="primary">Save</button>
+      </div>
+      <p class="muted" id="currentLabel" style="margin-top:.5rem"></p>
+      <h2>Saved setups</h2>
+      <ul class="setups" id="setups"></ul>
+    </section>
+
+    <section class="tabpanel" role="tabpanel" id="p-test" aria-labelledby="tab-test" hidden>
+      <div id="testIdle">
+        <div class="card">
+          <h2>Test the current setup</h2>
+          <p id="testIntro"></p>
+          <div class="row">
+            <button id="startTrial" class="primary">Start timed read</button>
+            <button id="justRate">Rate without timing</button>
+          </div>
+          <p class="muted" id="testHint" style="margin:.6rem 0 0"></p>
+        </div>
+      </div>
+      <form id="testResult" class="card" hidden>
+        <h2>How did that go?</h2>
+        <p id="resultSpeed"></p>
+        <div class="label" id="h-rate">How easy was it to read?</div>
+        <div class="ratings" role="radiogroup" aria-labelledby="h-rate" id="ratings"></div>
+        <div class="scale muted"><span>Very hard</span><span>Very easy</span></div>
+        <div class="field"><label for="resultNote">Notes (optional)</label>
+          <input type="text" id="resultNote" maxlength="200" placeholder="For example, the letters felt less jumbled"></div>
+        <div class="row">
+          <button class="primary" type="submit">Save result</button>
+          <button type="button" id="discardResult">Discard</button>
+        </div>
+      </form>
+      <h2>Results</h2>
+      <div id="results"></div>
+      <button id="csv" class="small" style="margin-top:.75rem" hidden>Download results (CSV)</button>
+    </section>
+  </aside>
+
+  <main class="stage" id="stage">
+    <div class="panes" id="panes">
+      <div class="pane" id="paneA">
+        <div class="pane-label" id="labelA" hidden></div>
+        <div class="clip"><div class="scroller" tabindex="0" role="region" aria-label="Story preview"><article></article></div><div class="band" hidden></div></div>
+      </div>
+      <div class="pane" id="paneB" hidden>
+        <div class="pane-label" id="labelB"></div>
+        <div class="clip"><div class="scroller" tabindex="0" role="region" aria-label="Comparison preview"><article></article></div><div class="band" hidden></div></div>
+      </div>
+    </div>
+    <div class="trial-bar" id="trialBar" hidden>
+      <button id="finishTrial" class="primary">I've finished reading</button>
+      <button id="cancelTrial">Cancel</button>
+    </div>
+  </main>
+</div>
+
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const STORE_KEY = 'reading-aid-tester:v1';
+const PASSAGE_WORDS = 130;
+
+const FONTS = [
+  {id:'arial', name:'Arial', css:'Arial, Helvetica, sans-serif', note:'A common, plain default'},
+  {id:'verdana', name:'Verdana', css:'Verdana, Geneva, sans-serif', note:'Wide letters with open spacing'},
+  {id:'georgia', name:'Georgia', css:'Georgia, "Times New Roman", serif', note:'A serif, for comparison'},
+  {id:'opendyslexic', name:'OpenDyslexic', css:'"OpenDyslexic", sans-serif', note:'Heavier letter bottoms, made for dyslexia'},
+  {id:'atkinson', name:'Atkinson Hyperlegible', css:'"Atkinson Hyperlegible", sans-serif', note:'Letters that are hard to confuse'},
+  {id:'lexend', name:'Lexend', css:'"Lexend", sans-serif', note:'Wide shapes, made for reading fluency'},
+  {id:'andika', name:'Andika', css:'"Andika", sans-serif', note:'Made for people learning to read'},
+  {id:'comic', name:'Comic Neue', css:'"Comic Neue", sans-serif', note:'Friendly, handwriting-like letters'},
+];
+const THEMES = [
+  {name:'White', fg:'#111111', bg:'#ffffff'},
+  {name:'Cream', fg:'#1f1c14', bg:'#fdf6e3'},
+  {name:'Yellow', fg:'#1a1a1a', bg:'#fff9b0'},
+  {name:'Peach', fg:'#222222', bg:'#ffe5d0'},
+  {name:'Pink', fg:'#222222', bg:'#fde4ec'},
+  {name:'Green', fg:'#1c2a1c', bg:'#dff5e1'},
+  {name:'Blue', fg:'#14233a', bg:'#dcecfb'},
+  {name:'Lilac', fg:'#241c36', bg:'#ebe3f9'},
+  {name:'Grey', fg:'#1b1b1b', bg:'#e4e4e4'},
+  {name:'Dark', fg:'#e8e6e0', bg:'#1e1f24'},
+  {name:'Yellow on black', fg:'#ffe94a', bg:'#000000'},
+];
+const SLIDERS = [
+  {key:'size', label:'Text size', min:14, max:40, step:1, fmt:v => v + 'px'},
+  {key:'lh', label:'Line spacing', min:1.2, max:3, step:0.1, fmt:v => v.toFixed(1)},
+  {key:'ls', label:'Letter spacing', min:0, max:0.3, step:0.01, fmt:v => '+' + v.toFixed(2)},
+  {key:'ws', label:'Word spacing', min:0, max:1, step:0.05, fmt:v => '+' + v.toFixed(2)},
+  {key:'pg', label:'Paragraph gap', min:0, max:3, step:0.25, fmt:v => v.toFixed(2)},
+  {key:'width', label:'Line length', min:30, max:110, step:5, fmt:v => v + ' characters'},
+];
+const RULERS = [
+  {id:'off', name:'Off'},
+  {id:'tint', name:'Reading ruler', note:'Shades the line you are reading'},
+  {id:'mask', name:'Line focus', note:'Fades everything but your line'},
+];
+const DEFAULTS = {font:'arial', fg:'#111111', bg:'#ffffff', size:20, lh:1.6, ls:0, ws:0, pg:1, width:65, align:'left', ruler:'off', bionic:false, stripes:false};
+const KEYS = Object.keys(DEFAULTS);
+const seedSetups = () => [
+  {id:'s1', name:'Plain', settings:{...DEFAULTS}},
+  {id:'s2', name:'OpenDyslexic on cream', settings:{...DEFAULTS, font:'opendyslexic', fg:'#1f1c14', bg:'#fdf6e3', lh:1.8, ws:0.1}},
+  {id:'s3', name:'Atkinson on blue, extra spacing', settings:{...DEFAULTS, font:'atkinson', fg:'#14233a', bg:'#dcecfb', size:22, lh:2, ls:0.05, ws:0.2}},
+  {id:'s4', name:'Lexend on dark, line focus', settings:{...DEFAULTS, font:'lexend', fg:'#e8e6e0', bg:'#1e1f24', lh:1.9, ruler:'mask'}},
+];
+const SAMPLE = `Jessica was seven, and she had a brand new kite. It was red, with a long yellow tail.
+
+"It is a perfect day for a kite," said Pa. The wind was shaking the trees all over Ferndown.
+
+They walked to Ferndown Common after lunch. Jessica ran along the path as fast as she could. The kite jumped up into the sky. It went up and up, until it looked as small as a strawberry.
+
+"Look at me!" Jessica shouted. "I am flying it all by myself!"
+
+Then a big gust of wind came. Whoosh! The string slipped out of her hand.
+
+"Oh no!" cried Jessica. "Come back, kite!"
+
+The kite did not come back. It danced away over the purple heather. Jessica and Pa hurried after it. They went past the tall pine trees and over a sandy hill. Jessica's shoes filled up with sand, but she did not stop.
+
+At last, she saw a bit of yellow tail. The kite was stuck in a prickly gorse bush. Jessica reached out, very carefully. Then she stopped. The bush was making a funny noise.
+
+Snuffle, snuffle. Yip!
+
+She bent down and looked under the bush. Two brown eyes looked back at her. It was a tiny, scruffy dog! Its lead was caught on a branch, and it could not get out.
+
+"Don't be scared," Jessica said in her kindest voice. She held out her hand, and the little dog licked it. Pa gently pulled the lead free. The dog shook itself and wagged its tail so hard that its whole body wiggled.
+
+There was a round silver tag on its collar. Jessica read it slowly. "P-i-ck-le. Pickle! His name is Pickle!" There was a phone number on the tag too, so Pa rang it.
+
+A few minutes later, a lady came running up the path. Her face was pink, and her hat was crooked. "Pickle!" she called. "Oh, Pickle, there you are!" Pickle jumped into her arms and licked her nose.
+
+"He ran off when the wind blew my hat away," said the lady. "I have been looking for him for ages. Did you find him all by yourself?"
+
+"My kite found him," said Jessica. "I just followed it."
+
+The lady laughed. "Then that is a very clever kite," she said. "And you are a very kind girl. Thank you."
+
+Pa got the kite out of the bush. It had one small hole, but it could still fly. Jessica held the string tight, with both hands this time. Up it went, high over the heather, and Pickle ran round and round underneath it, barking at the sky.
+
+On the way home, Pa bought two ice creams. Jessica had strawberry, because that was what her kite had looked like.
+
+"Can we fly it again tomorrow?" she asked.
+
+"Yes," said Pa. "But let's tie that string to your wrist!"`;
+
+/* ---------- state and storage ---------- */
+function defaultState(){
+  return {story:'', settings:{...DEFAULTS}, setups:seedSetups(), trials:[], passageIdx:0, compareId:'', tab:'story', panelHidden:false, ttsRate:1, voice:''};
+}
+function cleanSettings(s){
+  const out = {...DEFAULTS};
+  for (const k of KEYS) if (s && typeof s[k] === typeof DEFAULTS[k]) out[k] = s[k];
+  return out;
+}
+function load(){
+  const st = defaultState();
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORE_KEY));
+    if (saved && typeof saved === 'object'){
+      Object.assign(st, saved);
+      st.settings = cleanSettings(saved.settings);
+      st.setups = Array.isArray(saved.setups) ? saved.setups.map(x => ({...x, settings:cleanSettings(x.settings)})) : seedSetups();
+      st.trials = Array.isArray(saved.trials) ? saved.trials.map(x => ({...x, settings:cleanSettings(x.settings)})) : [];
+    }
+  } catch (e) { /* Unreadable or blocked storage: start with defaults. */ }
+  return st;
+}
+const state = load();
+let saveTimer = 0;
+function saveNow(){
+  clearTimeout(saveTimer); saveTimer = 0;
+  try {
+    localStorage.setItem(STORE_KEY, JSON.stringify(state));
+    $('saveStatus').textContent = '';
+  } catch (e) {
+    $('saveStatus').textContent = 'This browser could not save your data, so it will be lost when you close the page.';
+  }
+}
+function save(){ if (!saveTimer) saveTimer = setTimeout(saveNow, 300); }
+addEventListener('pagehide', () => { if (saveTimer) saveNow(); });
+
+/* ---------- helpers ---------- */
+function h(tag, props, ...kids){
+  const el = document.createElement(tag);
+  if (props) for (const k in props){
+    if (k === 'class') el.className = props[k];
+    else if (k.startsWith('on')) el.addEventListener(k.slice(2), props[k]);
+    else if (k in el) el[k] = props[k];
+    else el.setAttribute(k, props[k]);
+  }
+  el.append(...kids.filter(x => x != null));
+  return el;
+}
+const sig = s => JSON.stringify(KEYS.map(k => s[k]));
+const fontOf = s => FONTS.find(f => f.id === s.font) || FONTS[0];
+const themeOf = s => THEMES.find(t => t.fg === s.fg && t.bg === s.bg);
+function autoLabel(s){
+  const t = themeOf(s);
+  const parts = [fontOf(s).name, t ? t.name : `${s.fg} on ${s.bg}`, s.size + 'px'];
+  if (s.lh !== DEFAULTS.lh) parts.push('line spacing ' + s.lh.toFixed(1));
+  if (s.ls) parts.push('letter spacing +' + s.ls.toFixed(2));
+  if (s.ws) parts.push('word spacing +' + s.ws.toFixed(2));
+  if (s.width !== DEFAULTS.width) parts.push(s.width + ' characters wide');
+  if (s.align !== 'left') parts.push('justified');
+  if (s.bionic) parts.push('bold word starts');
+  if (s.stripes) parts.push('line stripes');
+  if (s.ruler === 'tint') parts.push('reading ruler');
+  if (s.ruler === 'mask') parts.push('line focus');
+  return parts.join(', ');
+}
+function labelFor(s){
+  const match = state.setups.find(x => sig(x.settings) === sig(s));
+  return match ? match.name : autoLabel(s);
+}
+function contrast(a, b){
+  const lum = hex => {
+    const c = [1,3,5].map(i => parseInt(hex.substr(i,2),16)/255).map(v => v <= .03928 ? v/12.92 : ((v+.055)/1.055)**2.4);
+    return .2126*c[0] + .7152*c[1] + .0722*c[2];
+  };
+  const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p);
+  return (x + .05) / (y + .05);
+}
+const countWords = t => (t.trim().match(/\S+/g) || []).length;
+const toParas = t => t.split(/\n+/).map(x => x.trim()).filter(Boolean);
+
+function passages(){
+  const out = []; let cur = [], curP = '', n = 0;
+  const flushP = () => { if (curP){ cur.push(curP.trim()); curP = ''; } };
+  const flush = () => { flushP(); if (cur.length) out.push({paras:cur, words:n}); cur = []; n = 0; };
+  for (const para of toParas(state.story)){
+    for (const sentence of para.match(/[^.!?]+[.!?]+["'”’)\]]*\s*|[^.!?]+$/g) || [para]){
+      curP += sentence; n += countWords(sentence);
+      if (n >= PASSAGE_WORDS) flush();
+    }
+    flushP();
+  }
+  if (cur.length || curP){
+    flushP();
+    if (n < PASSAGE_WORDS / 2 && out.length){ const last = out[out.length-1]; last.paras.push(...cur); last.words += n; }
+    else out.push({paras:cur, words:n});
+  }
+  return out;
+}
+
+/* ---------- reader panes ---------- */
+function makePane(el){
+  const p = {el, scroller:el.querySelector('.scroller'), article:el.querySelector('article'), band:el.querySelector('.band'),
+    settings:{...DEFAULTS}, paras:null, bionic:null, words:[], lines:[], line:0, anchor:0, lhPx:0};
+  p.scroller.addEventListener('scroll', () => { drawBand(p); syncScroll(p); }, {passive:true});
+  p.scroller.addEventListener('pointermove', e => pointLine(p, e));
+  p.scroller.addEventListener('pointerdown', e => pointLine(p, e));
+  p.scroller.addEventListener('keydown', e => {
+    if (p.settings.ruler === 'off' || !p.lines.length) return;
+    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+    e.preventDefault();
+    setLine(p, p.line + (e.key === 'ArrowDown' ? 1 : -1));
+    const ln = p.lines[p.line], view = p.scroller;
+    if (ln.t < view.scrollTop + view.clientHeight*.15 || ln.t > view.scrollTop + view.clientHeight*.75)
+      view.scrollTop = ln.t - view.clientHeight/3;
+  });
+  new ResizeObserver(() => schedule(p)).observe(p.article);
+  return p;
+}
+const A = makePane($('paneA')), B = makePane($('paneB'));
+
+function schedule(p){
+  if (p.pending) return;
+  p.pending = requestAnimationFrame(() => { p.pending = 0; measure(p); });
+}
+function wordSpan(word, bionic, idx){
+  const span = h('span', {class:'w'});
+  span.dataset.i = idx;
+  const m = bionic && word.match(/^([^\p{L}\p{N}]*)([\p{L}\p{N}'’-]+)(.*)$/su);
+  if (m){
+    const len = m[2].length, boldN = len <= 3 ? 1 : Math.ceil(len * .4), letters = Array.from(m[2]);
+    span.append(m[1], h('b', null, letters.slice(0, boldN).join('')), letters.slice(boldN).join('') + m[3] + ' ');
+  } else span.textContent = word + ' ';
+  return span;
+}
+function renderText(p, paras){
+  const frag = document.createDocumentFragment();
+  let i = 0;
+  p.groups = [];
+  for (const para of paras){
+    const pEl = h('p'), words = para.split(/\s+/), group = {el:pEl, words:[], spans:[]};
+    for (const w of words){
+      const span = wordSpan(w, p.settings.bionic, i++);
+      pEl.append(span); group.words.push(w); group.spans.push(span);
+    }
+    p.groups.push(group); frag.append(pEl);
+  }
+  p.article.replaceChildren(frag);
+  p.words = Array.from(p.article.querySelectorAll('.w'));
+}
+function showEmpty(p){
+  p.words = []; p.groups = [];
+  p.article.replaceChildren(h('div', {class:'empty'},
+    h('h2', null, 'Paste a story to begin'),
+    h('p', null, 'Paste a story into the Story tab, or try the sample. Then change the font, colours and aids to see what makes reading easier.'),
+    h('button', {onclick:useSample}, 'Use the sample story')));
+}
+function applyVars(p){
+  const s = p.settings, st = p.el.style;
+  st.setProperty('--r-font', fontOf(s).css);
+  st.setProperty('--r-fg', s.fg); st.setProperty('--r-bg', s.bg);
+  st.setProperty('--r-size', s.size); st.setProperty('--r-lh', s.lh);
+  st.setProperty('--r-ls', s.ls); st.setProperty('--r-ws', s.ws);
+  st.setProperty('--r-pg', s.pg); st.setProperty('--r-width', s.width);
+  st.setProperty('--r-align', s.align);
+  p.band.className = 'band band-' + s.ruler;
+}
+function setPane(p, paras, settings){
+  p.settings = settings;
+  applyVars(p);
+  if (p.paras !== paras || p.bionic !== settings.bionic){
+    if (p === A) stopSpeech();
+    p.paras = paras; p.bionic = settings.bionic;
+    p.anchor = 0;
+    if (paras.length) renderText(p, paras); else if (p === A) showEmpty(p); else p.article.replaceChildren();
+  }
+  schedule(p);
+}
+function measure(p){
+  const lines = [], strip = p.settings.stripes;
+  let cur = null;
+  p.lhPx = parseFloat(getComputedStyle(p.article).lineHeight) || p.settings.size * p.settings.lh;
+  p.words.forEach((el, i) => {
+    const t = el.offsetTop;
+    if (!cur || Math.abs(t - cur.t) > 2){ cur = {t, h:el.offsetHeight, first:i}; lines.push(cur); }
+    el.classList.toggle('odd', strip && lines.length % 2 === 0);
+  });
+  p.lines = lines;
+  let idx = 0;
+  while (idx + 1 < lines.length && lines[idx+1].first <= p.anchor) idx++;
+  p.line = idx;
+  drawBand(p);
+}
+function drawBand(p){
+  const ln = p.lines[p.line];
+  if (p.settings.ruler === 'off' || !ln){ p.band.hidden = true; return; }
+  p.band.hidden = false;
+  p.band.style.height = p.lhPx + 'px';
+  p.band.style.top = (ln.t + ln.h/2 - p.lhPx/2 - p.scroller.scrollTop) + 'px';
+}
+function setLine(p, i){
+  p.line = Math.max(0, Math.min(p.lines.length - 1, i));
+  if (p.lines[p.line]) p.anchor = p.lines[p.line].first;
+  drawBand(p);
+}
+function pointLine(p, e){
+  if (p.settings.ruler === 'off' || !p.lines.length) return;
+  const y = e.clientY - p.scroller.getBoundingClientRect().top + p.scroller.scrollTop;
+  let lo = 0, hi = p.lines.length - 1;
+  while (lo < hi){
+    const mid = (lo + hi + 1) >> 1;
+    if (p.lines[mid].t + p.lines[mid].h/2 - p.lhPx/2 <= y) lo = mid; else hi = mid - 1;
+  }
+  if (lo !== p.line) setLine(p, lo);
+}
+let syncing = false;
+function syncScroll(src){
+  if (syncing || $('paneB').hidden) return;
+  const other = src === A ? B : A;
+  const range = src.scroller.scrollHeight - src.scroller.clientHeight;
+  syncing = true;
+  other.scroller.scrollTop = range > 0 ? src.scroller.scrollTop / range * (other.scroller.scrollHeight - other.scroller.clientHeight) : 0;
+  requestAnimationFrame(() => { syncing = false; });
+}
+if (document.fonts) document.fonts.addEventListener('loadingdone', () => { schedule(A); schedule(B); });
+
+/* ---------- rendering the app ---------- */
+let storyParas = toParas(state.story);
+let trial = null, pendingResult = null;
+
+function refreshReader(){
+  if (trial) return;
+  setPane(A, storyParas, state.settings);
+  const setup = state.setups.find(x => x.id === state.compareId);
+  $('paneB').hidden = !setup;
+  $('labelA').hidden = !setup;
+  document.body.classList.toggle('compare-on', !!setup);
+  if (setup){
+    $('labelA').textContent = 'Current: ' + labelFor(state.settings);
+    $('labelB').textContent = setup.name;
+    setPane(B, storyParas, setup.settings);
+    schedule(A);
+  }
+}
+function changed(){
+  refreshReader(); syncControls(); renderSetups(); save();
+}
+function setSetting(k, v){ state.settings[k] = v; changed(); }
+
+function choice(name, value, onPick, ...content){
+  return h('label', {class:'choice'},
+    h('input', {type:'radio', name, value, onchange:onPick}),
+    h('span', null, ...content));
+}
+function buildControls(){
+  for (const f of FONTS){
+    const body = h('span', {style:`font-family:${f.css.replace(/"/g, "'")};font-size:1.1rem`}, f.name);
+    const c = choice('font', f.id, () => setSetting('font', f.id), body, h('small', null, f.note));
+    c.classList.add('font-choice');
+    $('fonts').append(c);
+  }
+  THEMES.forEach((t, i) => {
+    const c = choice('theme', String(i), () => { state.settings.fg = t.fg; state.settings.bg = t.bg; changed(); }, h('b', null, 'Aa'), t.name);
+    c.lastChild.style.background = t.bg; c.lastChild.style.color = t.fg;
+    $('themes').append(c);
+  });
+  for (const s of SLIDERS){
+    const input = h('input', {type:'range', id:'sl-' + s.key, min:s.min, max:s.max, step:s.step,
+      oninput:e => setSetting(s.key, parseFloat(e.target.value))});
+    $('sliders').append(h('div', {class:'field'},
+      h('label', {htmlFor:'sl-' + s.key}, s.label, h('output', {id:'out-' + s.key})), input));
+  }
+  for (const r of RULERS){
+    const c = choice('ruler', r.id, () => setSetting('ruler', r.id), r.name, r.note ? h('small', {style:'display:block'}, r.note) : null);
+    c.classList.add('font-choice');
+    $('rulers').append(c);
+  }
+  for (let n = 1; n <= 5; n++) $('ratings').append(choice('rating', String(n), () => {}, String(n)));
+}
+function syncControls(){
+  const s = state.settings;
+  document.querySelectorAll('input[name=font]').forEach(i => { i.checked = i.value === s.font; });
+  const ti = THEMES.indexOf(themeOf(s));
+  document.querySelectorAll('input[name=theme]').forEach(i => { i.checked = +i.value === ti; });
+  document.querySelectorAll('input[name=ruler]').forEach(i => { i.checked = i.value === s.ruler; });
+  for (const c of SLIDERS){
+    $('sl-' + c.key).value = s[c.key];
+    $('out-' + c.key).textContent = c.fmt(s[c.key]);
+  }
+  $('fg').value = s.fg; $('bg').value = s.bg; $('align').value = s.align;
+  $('bionic').checked = s.bionic; $('stripes').checked = s.stripes;
+  const ratio = contrast(s.fg, s.bg);
+  $('contrast').textContent = `Contrast ${ratio.toFixed(1)}:1` + (ratio < 4.5 ? '. This is low, so the text may be hard to read.' : '');
+  $('contrast').classList.toggle('warn', ratio < 4.5);
+  $('currentLabel').textContent = 'Current: ' + autoLabel(s);
+}
+function renderCompare(){
+  const sel = $('compare');
+  sel.replaceChildren(h('option', {value:''}, 'Nothing'), ...state.setups.map(x => h('option', {value:x.id}, x.name)));
+  sel.value = state.compareId;
+}
+function renderSetups(){
+  const cur = sig(state.settings);
+  $('setups').replaceChildren(...state.setups.map(x => h('li', null,
+    h('strong', null, x.name, sig(x.settings) === cur ? h('span', {class:'badge'}, 'In use') : null),
+    h('span', {class:'muted'}, autoLabel(x.settings)),
+    h('div', {class:'row'},
+      h('button', {class:'small', onclick:() => { state.settings = {...x.settings}; changed(); }}, 'Use'),
+      h('button', {class:'small', 'aria-label':'Delete ' + x.name, onclick:() => {
+        state.setups = state.setups.filter(o => o !== x);
+        if (state.compareId === x.id) state.compareId = '';
+        renderCompare(); changed(); renderResults();
+      }}, 'Delete')))));
+  if (!state.setups.length) $('setups').append(h('li', {class:'muted'}, 'There are no saved setups.'));
+}
+function renderStoryInfo(){
+  const n = countWords(state.story);
+  $('wordCount').textContent = n ? n.toLocaleString('en-GB') + ' words' : '';
+}
+function renderTest(){
+  const ps = passages();
+  $('testIdle').hidden = !!pendingResult;
+  $('testResult').hidden = !pendingResult;
+  $('startTrial').disabled = !ps.length;
+  if (!ps.length){
+    $('testIntro').textContent = 'Add a story first. You can still rate a setup without timing.';
+    $('testHint').textContent = '';
+  } else {
+    const i = state.passageIdx % ps.length;
+    $('testIntro').textContent = `You will read part ${i + 1} of ${ps.length} (${ps[i].words} words). The timer starts when you press the button.`;
+    $('testHint').textContent = state.passageIdx >= ps.length
+      ? 'You have now read every part once. Rereading is usually faster, so these times may flatter later setups. A longer story gives fairer results.'
+      : 'Each read uses a new part of the story, so knowing the text does not skew the times. Parts vary in difficulty, so try each setup more than once.';
+  }
+  renderResults();
+}
+function renderResults(){
+  const groups = new Map();
+  for (const t of state.trials){
+    const k = sig(t.settings);
+    if (!groups.has(k)) groups.set(k, {settings:t.settings, trials:[]});
+    groups.get(k).trials.push(t);
+  }
+  const mean = xs => xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null;
+  const rows = [...groups.values()].map(g => ({...g,
+    wpm:mean(g.trials.filter(t => t.wpm != null).map(t => t.wpm)),
+    rating:mean(g.trials.filter(t => t.rating != null).map(t => t.rating))}))
+    .sort((a, b) => (b.rating ?? -1) - (a.rating ?? -1) || (b.wpm ?? -1) - (a.wpm ?? -1));
+  $('csv').hidden = !rows.length;
+  if (!rows.length){
+    $('results').replaceChildren(h('p', {class:'muted'}, 'No results yet. Test a setup, change something, then test again.'));
+    return;
+  }
+  $('results').replaceChildren(...rows.map(r => {
+    const notes = r.trials.filter(t => t.note);
+    return h('div', {class:'result'},
+      h('strong', null, labelFor(r.settings)),
+      h('div', {class:'nums'},
+        h('span', null, h('b', null, r.rating != null ? r.rating.toFixed(1) : '–'), ' of 5 ease'),
+        h('span', null, h('b', null, r.wpm != null ? Math.round(r.wpm) : '–'), ' words/min'),
+        h('span', null, h('b', null, r.trials.length), r.trials.length === 1 ? ' read' : ' reads')),
+      notes.length ? h('ul', {class:'notes'}, ...notes.map(t => h('li', null, t.note))) : null,
+      h('div', {class:'row', style:'margin-top:.4rem'},
+        h('button', {class:'small', onclick:() => { state.settings = {...r.settings}; changed(); }}, 'Use'),
+        h('button', {class:'small', onclick:() => {
+          const k = sig(r.settings);
+          state.trials = state.trials.filter(t => sig(t.settings) !== k);
+          renderResults(); save();
+        }}, 'Delete')));
+  }));
+}
+function selectTab(id, focus){
+  state.tab = id;
+  for (const b of $('tabs').children){
+    const on = b.id === 'tab-' + id;
+    b.setAttribute('aria-selected', on); b.tabIndex = on ? 0 : -1;
+    $('p-' + b.id.slice(4)).hidden = !on;
+    if (on && focus) b.focus();
+  }
+  save();
+}
+function setPanelHidden(v){
+  state.panelHidden = v;
+  document.body.classList.toggle('panel-hidden', v);
+  $('togglePanel').textContent = v ? 'Show controls' : 'Hide controls';
+  $('togglePanel').setAttribute('aria-expanded', !v);
+  save();
+}
+
+/* ---------- story ---------- */
+function setStory(text){
+  state.story = text; state.passageIdx = 0;
+  storyParas = toParas(text);
+  renderStoryInfo(); refreshReader(); renderTest(); save();
+}
+function useSample(){
+  $('story').value = SAMPLE;
+  setStory(SAMPLE);
+  A.scroller.scrollTop = 0;
+}
+
+/* ---------- timed reads ---------- */
+function startTrial(){
+  const ps = passages();
+  if (!ps.length) return;
+  const part = ps[state.passageIdx % ps.length];
+  state.passageIdx++; save();
+  stopSpeech();
+  document.body.classList.add('trial');
+  $('paneB').hidden = true; $('labelA').hidden = true;
+  $('trialBar').hidden = false;
+  setPane(A, part.paras, state.settings);
+  measure(A);
+  A.scroller.scrollTop = 0;
+  A.scroller.focus();
+  trial = {words:part.words, start:performance.now()};
+}
+function endTrial(){
+  document.body.classList.remove('trial');
+  $('trialBar').hidden = true;
+  const t = trial; trial = null;
+  refreshReader();
+  A.scroller.scrollTop = B.scroller.scrollTop = 0;
+  return t;
+}
+function openResult(result){
+  pendingResult = result;
+  $('testResult').reset();
+  $('resultSpeed').replaceChildren(...(result.wpm != null
+    ? [h('span', {class:'stat'}, result.wpm + ' words per minute'), `${result.words} words in ${Math.round(result.ms/1000)} seconds`]
+    : ['Rating the current setup without a time.']));
+  selectTab('test');
+  renderTest();
+  document.querySelector('input[name=rating]').focus();
+}
+function saveResult(e){
+  e.preventDefault();
+  const r = document.querySelector('input[name=rating]:checked');
+  state.trials.push({...pendingResult, settings:{...state.settings}, rating:r ? +r.value : null,
+    note:$('resultNote').value.trim(), at:new Date().toISOString()});
+  pendingResult = null;
+  renderTest(); save();
+}
+function downloadCsv(){
+  const cell = v => {
+    let x = v == null ? '' : String(v);
+    if (typeof v === 'string' && /^[=+\-@]/.test(x)) x = "'" + x;
+    return '"' + x.replace(/"/g, '""') + '"';
+  };
+  const head = ['date', 'setup', 'words', 'seconds', 'wpm', 'ease_1_to_5', 'note', ...KEYS];
+  const rows = state.trials.map(t => [t.at, labelFor(t.settings), t.words, t.ms != null ? Math.round(t.ms/1000) : null, t.wpm, t.rating, t.note, ...KEYS.map(k => t.settings[k])]);
+  const csv = [head, ...rows].map(r => r.map(cell).join(',')).join('\r\n');
+  const url = URL.createObjectURL(new Blob(['﻿' + csv], {type:'text/csv;charset=utf-8'}));
+  const a = h('a', {href:url, download:'reading-aid-results.csv'});
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+/* ---------- read aloud ---------- */
+const synth = window.speechSynthesis;
+let speakToken = 0, spokenEl = null;
+function markSpoken(el){
+  if (spokenEl) spokenEl.classList.remove('speaking');
+  spokenEl = el;
+  if (el){
+    el.classList.add('speaking');
+    const v = A.scroller, top = el.offsetTop;
+    if (top < v.scrollTop || top > v.scrollTop + v.clientHeight * .7) v.scrollTop = top - v.clientHeight/3;
+  }
+}
+function stopSpeech(){
+  if (!synth) return;
+  speakToken++;
+  synth.cancel();
+  markSpoken(null);
+  $('speak').textContent = 'Read aloud';
+}
+function speakGroup(i, token){
+  if (token !== speakToken) return;
+  const g = A.groups[i];
+  if (!g){ stopSpeech(); return; }
+  const text = g.words.join(' '), starts = [];
+  let at = 0;
+  for (const w of g.words){ starts.push(at); at += w.length + 1; }
+  const u = new SpeechSynthesisUtterance(text);
+  u.rate = state.ttsRate;
+  const voice = synth.getVoices().find(v => v.voiceURI === state.voice);
+  if (voice) u.voice = voice;
+  u.onboundary = e => {
+    if (token !== speakToken || (e.name && e.name !== 'word')) return;
+    let k = starts.length - 1;
+    while (k > 0 && starts[k] > e.charIndex) k--;
+    markSpoken(g.spans[k]);
+  };
+  u.onend = () => speakGroup(i + 1, token);
+  u.onerror = () => { if (token === speakToken) stopSpeech(); };
+  synth.speak(u);
+}
+function toggleSpeech(){
+  if ($('speak').textContent !== 'Read aloud'){ stopSpeech(); return; }
+  if (!A.groups || !A.groups.length) return;
+  const top = A.scroller.getBoundingClientRect().top;
+  let first = A.groups.findIndex(g => g.el.getBoundingClientRect().bottom > top);
+  if (first < 0) first = 0;
+  const token = ++speakToken;
+  $('speak').textContent = 'Stop reading';
+  synth.cancel();
+  speakGroup(first, token);
+}
+function fillVoices(){
+  if (!synth) return;
+  const lang = (navigator.language || 'en').slice(0, 2);
+  const voices = synth.getVoices().slice().sort((a, b) =>
+    (b.lang.startsWith(lang) - a.lang.startsWith(lang)) || a.name.localeCompare(b.name));
+  $('voice').replaceChildren(h('option', {value:''}, 'Device default'),
+    ...voices.map(v => h('option', {value:v.voiceURI}, `${v.name} (${v.lang})`)));
+  $('voice').value = voices.some(v => v.voiceURI === state.voice) ? state.voice : '';
+}
+
+/* ---------- wiring ---------- */
+function init(){
+  buildControls();
+  $('story').value = state.story;
+  renderStoryInfo(); renderCompare(); syncControls(); renderSetups(); renderTest();
+  selectTab(['story','look','aids','setups','test'].includes(state.tab) ? state.tab : 'story');
+  setPanelHidden(!!state.panelHidden);
+  refreshReader();
+
+  let storyTimer = 0;
+  $('story').addEventListener('input', e => {
+    clearTimeout(storyTimer);
+    storyTimer = setTimeout(() => setStory(e.target.value), 200);
+  });
+  $('sample').addEventListener('click', useSample);
+  $('wipe').addEventListener('click', () => {
+    if (!confirm('Erase your story, saved setups and results from this browser?')) return;
+    clearTimeout(saveTimer); saveTimer = 0;
+    try { localStorage.removeItem(STORE_KEY); } catch (e) {}
+    location.reload();
+  });
+  $('tabs').addEventListener('click', e => { if (e.target.id) selectTab(e.target.id.slice(4)); });
+  $('tabs').addEventListener('keydown', e => {
+    const tabs = [...$('tabs').children], i = tabs.indexOf(e.target);
+    const j = e.key === 'ArrowRight' ? i + 1 : e.key === 'ArrowLeft' ? i - 1 : e.key === 'Home' ? 0 : e.key === 'End' ? tabs.length - 1 : null;
+    if (j === null) return;
+    e.preventDefault();
+    selectTab(tabs[(j + tabs.length) % tabs.length].id.slice(4), true);
+  });
+  $('togglePanel').addEventListener('click', () => setPanelHidden(!state.panelHidden));
+  $('compare').addEventListener('change', e => { state.compareId = e.target.value; refreshReader(); save(); });
+  $('fg').addEventListener('input', e => setSetting('fg', e.target.value));
+  $('bg').addEventListener('input', e => setSetting('bg', e.target.value));
+  $('align').addEventListener('change', e => setSetting('align', e.target.value));
+  $('bionic').addEventListener('change', e => setSetting('bionic', e.target.checked));
+  $('stripes').addEventListener('change', e => setSetting('stripes', e.target.checked));
+  $('resetLook').addEventListener('click', () => {
+    const {ruler, bionic, stripes} = state.settings;
+    state.settings = {...DEFAULTS, ruler, bionic, stripes};
+    changed();
+  });
+  $('saveSetup').addEventListener('click', () => {
+    const name = $('setupName').value.trim() || autoLabel(state.settings);
+    const existing = state.setups.find(x => x.name === name);
+    if (existing) existing.settings = {...state.settings};
+    else state.setups.push({id:'u' + Date.now(), name, settings:{...state.settings}});
+    $('setupName').value = '';
+    renderCompare(); changed(); renderResults();
+  });
+  $('setupName').addEventListener('keydown', e => { if (e.key === 'Enter') $('saveSetup').click(); });
+
+  $('startTrial').addEventListener('click', startTrial);
+  $('justRate').addEventListener('click', () => openResult({words:null, ms:null, wpm:null}));
+  $('finishTrial').addEventListener('click', () => {
+    const ms = performance.now() - trial.start;
+    const t = endTrial();
+    openResult({words:t.words, ms, wpm:Math.round(t.words / (ms / 60000))});
+  });
+  $('cancelTrial').addEventListener('click', () => { endTrial(); renderTest(); });
+  addEventListener('keydown', e => { if (e.key === 'Escape' && trial){ endTrial(); renderTest(); } });
+  $('testResult').addEventListener('submit', saveResult);
+  $('discardResult').addEventListener('click', () => { pendingResult = null; renderTest(); });
+  $('csv').addEventListener('click', downloadCsv);
+
+  if (synth){
+    $('ttsRate').value = state.ttsRate;
+    $('ttsRateOut').textContent = state.ttsRate.toFixed(1) + '×';
+    $('ttsRate').addEventListener('input', e => {
+      state.ttsRate = parseFloat(e.target.value);
+      $('ttsRateOut').textContent = state.ttsRate.toFixed(1) + '×';
+      save();
+    });
+    $('voice').addEventListener('change', e => { state.voice = e.target.value; save(); });
+    $('speak').addEventListener('click', toggleSpeech);
+    fillVoices();
+    synth.addEventListener('voiceschanged', fillVoices);
+    addEventListener('pagehide', () => synth.cancel());
+  } else {
+    $('ttsBox').hidden = true;
+  }
+}
+init();
+</script>
+<noscript><p style="padding:1rem">This page needs JavaScript to run.</p></noscript>
+</body>
+</html>
