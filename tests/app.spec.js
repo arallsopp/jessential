@@ -3,7 +3,7 @@ const { test, expect } = require('@playwright/test');
 // 500 distinct words in short sentences: splits into three or more parts.
 const LONG_STORY = Array.from({ length: 100 }, (_, i) => `Sentence ${i} has five words.`).join(' ');
 
-async function open(page, hash = '') {
+async function open(page, hash = '#settings') {
   await page.goto('/index.html' + hash);
 }
 async function pasteStory(page, text) {
@@ -278,7 +278,7 @@ test.describe('shareable links', () => {
     await fresh.goto(url);
     expect(await fresh.evaluate(() => state.settings)).toEqual(expected);
     await expect(fresh.locator('body')).toHaveClass(/panel-hidden/);
-    expect(fresh.url()).not.toContain('#');
+    expect(fresh.url()).not.toContain('font=');
     await other.close();
   });
 

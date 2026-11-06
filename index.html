@@ -2,7 +2,12 @@
 <html lang="en-GB">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Jessential!">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="manifest" href="manifest.webmanifest">
 <title>Jessential!</title>
 <meta name="description" content="Paste a story and find out which fonts, colours and reading aids make it easiest to read.">
 <meta property="og:type" content="website">
@@ -66,8 +71,8 @@ textarea{width:100%;min-height:45vh;padding:.75rem;background:var(--ui-panel);bo
 
 .app{flex:1;min-height:0;display:grid;grid-template-columns:360px minmax(0,1fr)}
 .panel{min-height:0;display:flex;flex-direction:column;background:var(--ui-panel);border-right:1px solid var(--ui-line)}
-.panel-hidden .app,.trial .app{grid-template-columns:minmax(0,1fr)}
-.panel-hidden .panel,.trial .panel,.trial .top .in-top{display:none}
+.panel-hidden .app,.trial .app,.reading .app{grid-template-columns:minmax(0,1fr)}
+.panel-hidden .panel,.trial .panel,.reading .panel,.trial .top .in-top{display:none}
 
 .tabs{display:flex;border-bottom:1px solid var(--ui-line);flex:none}
 .tabs button{flex:1;min-height:44px;padding:0 .2rem;border:0;border-radius:0;background:none;border-bottom:3px solid transparent;color:var(--ui-muted)}
@@ -152,17 +157,185 @@ article p{margin:0 0 calc(var(--r-pg)*1em)}
   .top label{white-space:normal}
   .trial-bar{position:sticky;bottom:0}
 }
+
+/* ---------- Jessica's screens and Nan's page ---------- */
+.view{flex:1;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;padding:max(1.5rem,env(safe-area-inset-top)) max(1.5rem,env(safe-area-inset-right)) max(1.5rem,env(safe-area-inset-bottom)) max(1.5rem,env(safe-area-inset-left))}
+.view button{touch-action:manipulation}
+.view-inner{max-width:760px;margin:0 auto}
+.home-title{font-size:2.25rem;line-height:1.2;margin:0 0 1.25rem}
+.big-card{display:block;width:100%;min-height:96px;padding:1rem 1.25rem;text-align:left;font-size:1.5rem;font-weight:700;line-height:1.3;border:2px solid var(--ui-line);border-radius:14px;margin:0 0 .75rem}
+.big-card small{display:block;font-size:1rem;font-weight:400;opacity:.8}
+.big-card.game-card{background:var(--ui-accent);border-color:var(--ui-accent);color:var(--ui-on-accent);margin-bottom:1.75rem}
+.shelf-title{font-size:1.25rem;margin:0 0 .75rem}
+.nan-door{position:relative;overflow:hidden;display:block;margin:2rem auto 0;min-height:48px;padding:.3rem 1.25rem;color:var(--ui-muted);-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:none}
+.nan-door small{display:block;font-size:.8rem}
+.nan-door::before{content:"";position:absolute;inset:0;background:var(--ui-soft);transform:scaleX(0);transform-origin:left;z-index:-1}
+.nan-door{isolation:isolate}
+.nan-door.holding::before{transform:scaleX(1);transition:transform 1.2s linear}
+
+.game{display:flex;flex-direction:column;gap:1rem}
+.game-top{display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex:none}
+.game-top button{min-height:48px;font-size:1.1rem}
+.game-round{font-size:1.1rem;color:var(--ui-muted);text-align:center}
+.game-ask{font-size:2rem;line-height:1.2;text-align:center;margin:0;flex:none}
+.game-cards{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.game-card-choice{width:100%;min-height:220px;padding:1.5rem;border:3px solid var(--ui-line);border-radius:16px;text-align:left;overflow:auto;overflow-wrap:break-word}
+.game-card-choice:active,.game-card-choice.picked{border-color:var(--ui-accent);box-shadow:0 0 0 3px var(--ui-accent)}
+.game-same{flex:none;align-self:center;min-height:52px;padding:0 1.5rem;font-size:1.1rem}
+.game-done{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.25rem;text-align:center}
+.game-done h1{font-size:2.25rem;line-height:1.2}
+.game-winner{width:100%;max-width:620px;padding:1.5rem;border:3px solid var(--ui-accent);border-radius:16px;text-align:left}
+.big-actions{display:flex;flex-wrap:wrap;gap:.75rem;justify-content:center}
+.big-actions button{min-height:60px;padding:0 1.75rem;font-size:1.25rem}
+.star{width:96px;height:96px;fill:#f2c94c;stroke:#1f4e5f;stroke-width:1.2;stroke-linejoin:round}
+
+.reader-bar{flex:none;display:flex;align-items:center;gap:.75rem;padding:.6rem max(1rem,env(safe-area-inset-right)) .6rem max(1rem,env(safe-area-inset-left));background:var(--ui-panel);border-bottom:1px solid var(--ui-line)}
+.reader-bar button{min-height:52px;padding:0 1.25rem;font-size:1.15rem}
+.reader-bar .title{flex:1;min-width:0;text-align:center;font-weight:700;font-size:1.1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.page-bar{border-bottom:0;border-top:1px solid var(--ui-line);padding-bottom:max(.6rem,env(safe-area-inset-bottom));justify-content:space-between}
+.page-bar .page-num{flex:1;text-align:center;color:var(--ui-muted)}
+.page-bar .primary{min-width:9rem}
+.trial #advancedBack{display:none}
+html.immersive body{height:100dvh}
+.reading article{padding-bottom:2rem}
+.reading article,.reading .w{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.reading .scroller{touch-action:manipulation}
+.reading .w{cursor:pointer}
+
+.nan-section{padding:1rem;margin:0 0 1rem;background:var(--ui-panel);border:1px solid var(--ui-line);border-radius:12px}
+.nan-section h2{margin:0 0 .5rem;font-size:1.15rem}
+.nan-section textarea{min-height:10rem;margin:.5rem 0}
+.nan-list{list-style:none;margin:.5rem 0 0;padding:0}
+.nan-list li{padding:.6rem 0;border-top:1px solid var(--ui-line)}
+.nan-list strong{display:block}
+.then-now{font-size:1.15rem;margin:.25rem 0 .5rem}
+.nan-setup{background:var(--ui-soft);border-color:var(--ui-accent)}
+.nan-setup ol{margin:.25rem 0 .5rem;padding-left:1.25rem}
+
+@media (max-width:640px){
+  .game-cards{grid-template-columns:1fr}
+  .game-card-choice{min-height:150px}
+  .game-ask,.home-title{font-size:1.75rem}
+}
+@media (max-width:800px){
+  html.immersive,html.immersive body{height:100%}
+  .reading .app{display:grid}
+  .reading .panes{flex-direction:column}
+  .reading .pane{flex:1 1 0;height:auto}
+}
 </style>
 </head>
 <body>
-<header class="top">
+<section class="view" id="homeView" hidden>
+  <div class="view-inner">
+    <h1 class="home-title">Hello, Jessica!</h1>
+    <button id="playGame" class="big-card game-card">Which is easier?<small>Play a game to find your best look</small></button>
+    <h2 class="shelf-title">Your stories</h2>
+    <div id="shelf"></div>
+    <button id="nanDoor" class="nan-door">Nan's page<small>Press and hold</small></button>
+  </div>
+</section>
+
+<section class="view game" id="gameView" hidden>
+  <div id="gamePlay" class="game" style="flex:1;min-height:0">
+    <div class="game-top">
+      <button id="gameStop">Stop</button>
+      <span class="game-round" id="gameRound" role="status"></span>
+      <button id="gameHear">Hear this</button>
+    </div>
+    <h1 class="game-ask">Which one is easier to read?</h1>
+    <div class="game-cards" id="gameCards"></div>
+    <button class="game-same" id="gameSame">They look the same</button>
+  </div>
+  <div class="game-done" id="gameDone" hidden>
+    <svg class="star" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l3 6.5 7 .9-5.100 4.900 1.300 7L12 17.900 5.800 21.300l1.300-7L2 9.400l7-.9z"/></svg>
+    <h1>This is your look!</h1>
+    <div class="game-winner" id="gameWinner"></div>
+    <div class="big-actions">
+      <button id="gameKeep" class="primary">Keep this look</button>
+      <button id="gameAgain">Play again</button>
+    </div>
+  </div>
+</section>
+
+<section class="view" id="doneView" hidden>
+  <div class="game-done" style="min-height:100%">
+    <svg class="star" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l3 6.500 7 .9-5.100 4.900 1.300 7L12 17.900 5.800 21.300l1.300-7L2 9.400l7-.9z"/></svg>
+    <h1>Well done, Jessica!</h1>
+    <div class="big-actions">
+      <button id="doneAgain">Read it again</button>
+      <button id="doneHome" class="primary">Back to my stories</button>
+    </div>
+  </div>
+</section>
+
+<section class="view" id="nanView" hidden>
+  <div class="view-inner">
+    <div class="row" style="justify-content:space-between;margin-bottom:1rem">
+      <h1 style="font-size:1.5rem">Nan's page</h1>
+      <button id="nanBack">Back to Jessica's stories</button>
+    </div>
+
+    <section class="nan-section nan-setup" id="nanSetup" hidden>
+      <h2>Do this first, so nothing gets lost</h2>
+      <p>Safari can delete saved stories and results from a website that hasn't been opened for a week. A Home Screen icon avoids this.</p>
+      <ol>
+        <li>Tap the Share button at the top of Safari.</li>
+        <li>Tap <strong>Add to Home Screen</strong>, then <strong>Add</strong>.</li>
+        <li>From now on, open Jessential! from that icon only.</li>
+      </ol>
+      <p class="muted" style="margin:0">Anything saved in Safari doesn't carry over to the icon, so add stories after you've done this.</p>
+    </section>
+
+    <section class="nan-section">
+      <h2>Then and now</h2>
+      <div id="thenNow"></div>
+      <p>Every few weeks, ask Jessica to read a new short passage aloud to you. She won't see a timer or a number, so there's nothing to race.</p>
+      <button id="startCheck" class="primary">Start a reading check</button>
+      <p class="muted warn" id="checkStatus" role="status" style="margin:.5rem 0 0"></p>
+      <p class="muted" id="checkRepeat" style="margin:.5rem 0 0" hidden>She has now read all six passages, so these will be repeats. Rereading is usually faster, so later speeds may look better than they are.</p>
+      <ul class="nan-list" id="checkList"></ul>
+    </section>
+
+    <section class="nan-section">
+      <h2>Jessica's stories</h2>
+      <ul class="nan-list" id="nanStories"></ul>
+      <h2 id="storyFormTitle" style="margin-top:1rem">Add a story</h2>
+      <label class="label" for="newTitle">Title</label>
+      <input type="text" id="newTitle" maxlength="80">
+      <label class="label" for="newText" style="margin-top:.5rem">Story</label>
+      <textarea id="newText"></textarea>
+      <div class="row">
+        <button id="saveStory" class="primary">Save story</button>
+        <button id="cancelEdit" hidden>Cancel</button>
+      </div>
+      <p class="muted warn" id="storyStatus" role="status" style="margin:.5rem 0 0"></p>
+    </section>
+
+    <section class="nan-section">
+      <h2>Keep a safe copy</h2>
+      <p class="muted">Saves the stories, look and reading checks as a file, in case the iPad is reset or replaced.</p>
+      <div class="row">
+        <button id="backup">Save a copy</button>
+        <button id="restoreBtn">Restore a copy</button>
+        <input type="file" id="restoreFile" accept=".json,application/json" hidden>
+      </div>
+      <p class="muted" id="backupStatus" role="status" style="margin:.5rem 0 0"></p>
+    </section>
+
+    <button id="openAdvanced">All settings and tools</button>
+  </div>
+</section>
+
+<header class="top" id="topBar">
+  <button id="advancedBack" class="small">Back to Nan's page</button>
   <h1>Jessential!</h1>
   <span class="spacer"></span>
   <label class="in-top">Compare with <select id="compare"></select></label>
   <button id="togglePanel" class="in-top" aria-expanded="true">Hide controls</button>
 </header>
 
-<div class="app">
+<div class="app" id="appView">
   <aside class="panel" aria-label="Controls">
     <div class="tabs" role="tablist" id="tabs">
       <button role="tab" id="tab-story" aria-controls="p-story">Story</button>
@@ -274,6 +447,11 @@ article p{margin:0 0 calc(var(--r-pg)*1em)}
   </aside>
 
   <main class="stage" id="stage">
+    <div class="reader-bar" id="readBar" hidden>
+      <button id="readHome">Back</button>
+      <span class="title" id="readTitle"></span>
+      <button id="listen">Listen</button>
+    </div>
     <div class="notice" id="linkPrompt" role="group" aria-label="Story in this link" hidden>
       <p>This link comes with its own story. Do you want to replace the story saved here?</p>
       <div class="row">
@@ -290,6 +468,15 @@ article p{margin:0 0 calc(var(--r-pg)*1em)}
         <div class="pane-label" id="labelB"></div>
         <div class="clip"><div class="scroller" tabindex="0" role="region" aria-label="Comparison preview"><article></article></div><div class="band" hidden></div></div>
       </div>
+    </div>
+    <div class="reader-bar page-bar" id="pageBar" hidden>
+      <button id="prevPage">Back a page</button>
+      <span class="page-num" id="pageNum"></span>
+      <button id="nextPage" class="primary">Next page</button>
+    </div>
+    <div class="reader-bar page-bar" id="checkBar" hidden>
+      <button id="cancelCheck">Cancel</button>
+      <button id="finishCheck" class="primary">Finished</button>
     </div>
     <div class="trial-bar" id="trialBar" hidden>
       <button id="finishTrial" class="primary">I've finished reading</button>
@@ -350,9 +537,9 @@ const seedSetups = () => [
 ];
 const SAMPLE = `Jessica was seven, and she had a brand new kite. It was red, with a long yellow tail.
 
-"It is a perfect day for a kite," said Pa. The wind was shaking the trees all over Ferndown.
+"It is a perfect day for a kite," said Pa. The wind was shaking the trees all over Pinewood.
 
-They walked to Ferndown Common after lunch. Jessica ran along the path as fast as she could. The kite jumped up into the sky. It went up and up, until it looked as small as a strawberry.
+They walked to Pinewood Common after lunch. Jessica ran along the path as fast as she could. The kite jumped up into the sky. It went up and up, until it looked as small as a strawberry.
 
 "Look at me!" Jessica shouted. "I am flying it all by myself!"
 
@@ -388,9 +575,63 @@ On the way home, Pa bought two ice creams. Jessica had strawberry, because that 
 
 "Yes," said Pa. "But let's tie that string to your wrist!"`;
 
+const SAMPLE_TITLE = 'The Runaway Kite';
+const PAGE_WORDS = 60;
+// Passages of roughly equal difficulty, for timed checks. They are not a calibrated test.
+const CHECKS = [
+{
+"id": "mitten",
+"text": "Tom had one red mitten. The other one was lost. He looked under his bed and behind the door. He looked in his coat and in his boots. Then he went out into the snow. His dog Max ran on ahead. Max stopped by the old apple tree and started to dig. Snow flew up all around him. Tom ran over to see what he had found. It was the red mitten! It was wet and cold, but Tom was very glad to have it back. He gave Max a big hug. Then they went home to get warm by the fire."
+},
+{
+"id": "boat",
+"text": "Mia made a little boat from a box. She gave it a stick for a mast and a green leaf for a sail. Then she took it down to the stream. The water was fast and clear. Mia put the boat in and let it go. Off it went, past the rocks and under the small bridge. Mia ran along the bank to keep up. A duck swam over to have a look. The boat spun round and got stuck in some long grass. Mia pulled it out and laughed. Her socks were wet, but her boat was still going strong."
+},
+{
+"id": "cake",
+"text": "It was Gran's birthday, so Sam and Dad made a cake. Sam got out the eggs and the flour. Dad found a big bowl and a spoon. They mixed it all up until it was soft and yellow. Sam licked the spoon when Dad was not looking. Then the cake went in the oven. Soon the whole house had a sweet, warm smell. When the cake was cool, Sam put jam on the top and six pink candles. Gran came in and clapped her hands. She said it was the best cake she had ever had in her life."
+},
+{
+"id": "bus",
+"text": "Ben and his mum were late for the bus. They ran down the hill with their bags. Ben could see the bus at the stop. It was big and blue, and the doors were still open. Then the doors shut and the bus began to move. Ben waved his arms and called out as loud as he could. The driver looked in her mirror and saw him. The bus stopped with a loud hiss. Ben and his mum jumped on, red in the face. Thank you, said Ben. The driver smiled and gave him a wink."
+},
+{
+"id": "seeds",
+"text": "Amy found a packet of seeds in the shed. She took a pot and filled it with soil. She made a small hole with her finger and dropped in one seed. Then she gave it a drink of water. Each day, Amy went to look at her pot. For a long time there was nothing to see. Then one morning, a tiny green shoot was poking up. It grew and grew, up past the top of the fence. At the end of the summer, it had a huge yellow flower. It was taller than Amy and her dad."
+},
+{
+"id": "cat",
+"text": "There was a cat on the roof of the school. All the children looked up and pointed. The cat was black, with one white paw. It sat by the chimney and looked down at them all. Mr Lee got a long ladder and went up to get it. He was very slow and very careful. When he got near the top, the cat stood up and had a stretch. Then it ran along the roof and jumped down into a tree. It was on the grass before Mr Lee could turn round. All the children cheered and clapped."
+}
+];
+const CREAM = {fg:'#1f1c14', bg:'#fdf6e3'}, WHITE = {fg:'#111111', bg:'#ffffff'}, BLUE = {fg:'#14233a', bg:'#dcecfb'};
+// Each round compares the look so far with one change. A round with its own `a` sets both sides.
+const GAME_ROUNDS = [
+  {text:'Pickle ran round and round under the red kite.', a:{font:'andika'}, b:{font:'comic'}},
+  {text:'The little dog shook itself and wagged its tail.', b:{font:'lexend'}},
+  {text:'Up it went, high over the purple heather.', a:CREAM, b:WHITE},
+  {text:'She held the string tight with both hands.', b:BLUE},
+  {text:'They went past the tall trees and over a sandy hill.', a:{size:24}, b:{size:30}},
+  {text:'On the way home, they had two big ice creams.', a:{lh:1.7, ls:0, ws:0}, b:{lh:2.1, ls:0.03, ws:0.15}},
+];
+
 /* ---------- state and storage ---------- */
 function defaultState(){
-  return {story:'', settings:{...DEFAULTS}, setups:seedSetups(), trials:[], passageIdx:0, compareId:'', tab:'story', panelHidden:false, ttsRate:1, voice:''};
+  return {story:'', settings:{...DEFAULTS}, setups:seedSetups(), trials:[], passageIdx:0, compareId:'', tab:'story', panelHidden:false, ttsRate:0.9, voice:'', stories:seedStories(), checks:[]};
+}
+function seedStories(){
+  return [{id:'sample', title:SAMPLE_TITLE, text:SAMPLE, page:0, reads:[]}];
+}
+function cleanStories(list){
+  if (!Array.isArray(list)) return seedStories();
+  return list.filter(x => x && typeof x.text === 'string' && x.text.trim()).map((x, i) => ({
+    id:String(x.id || 'r' + i), title:String(x.title || 'A story'), text:x.text,
+    page:Number.isInteger(x.page) && x.page >= 0 ? x.page : 0,
+    reads:Array.isArray(x.reads) ? x.reads.filter(d => typeof d === 'string') : []}));
+}
+function cleanChecks(list){
+  if (!Array.isArray(list)) return [];
+  return list.filter(x => x && Number.isFinite(x.wpm) && typeof x.at === 'string');
 }
 function cleanSettings(s){
   const out = {...DEFAULTS};
@@ -406,6 +647,8 @@ function load(){
       st.settings = cleanSettings(saved.settings);
       st.setups = Array.isArray(saved.setups) ? saved.setups.map(x => ({...x, settings:cleanSettings(x.settings)})) : seedSetups();
       st.trials = Array.isArray(saved.trials) ? saved.trials.map(x => ({...x, settings:cleanSettings(x.settings)})) : [];
+      st.stories = cleanStories(saved.stories);
+      st.checks = cleanChecks(saved.checks);
     }
   } catch (e) { /* Unreadable or blocked storage: start with defaults. */ }
   return st;
@@ -473,20 +716,20 @@ function storyId(text){
   return (hash >>> 0).toString(16);
 }
 
-function passages(){
+function passages(text = state.story, target = PASSAGE_WORDS){
   const out = []; let cur = [], curP = '', n = 0;
   const flushP = () => { if (curP){ cur.push(curP.trim()); curP = ''; } };
   const flush = () => { flushP(); if (cur.length) out.push({paras:cur, words:n}); cur = []; n = 0; };
-  for (const para of toParas(state.story)){
+  for (const para of toParas(text)){
     for (const sentence of para.match(/.+?(?:[.!?]+["'”’)\]]*(?:\s+|$)|$)/gs) || [para]){
       curP += sentence; n += countWords(sentence);
-      if (n >= PASSAGE_WORDS) flush();
+      if (n >= target) flush();
     }
     flushP();
   }
   if (cur.length || curP){
     flushP();
-    if (n < PASSAGE_WORDS / 2 && out.length){ const last = out[out.length-1]; last.paras.push(...cur); last.words += n; }
+    if (n < target / 2 && out.length){ const last = out[out.length-1]; last.paras.push(...cur); last.words += n; }
     else out.push({paras:cur, words:n});
   }
   return out;
@@ -499,6 +742,11 @@ function makePane(el){
   p.scroller.addEventListener('scroll', () => { drawBand(p); syncScroll(p); }, {passive:true});
   p.scroller.addEventListener('pointermove', e => pointLine(p, e));
   p.scroller.addEventListener('pointerdown', e => pointLine(p, e));
+  p.scroller.addEventListener('click', e => {
+    if (currentScreen !== 'read') return;
+    const word = e.target.closest('.w');
+    if (word) sayWord(word);
+  });
   p.scroller.addEventListener('keydown', e => {
     if (p.settings.ruler === 'off' || !p.lines.length) return;
     if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
@@ -620,10 +868,10 @@ if (document.fonts) document.fonts.addEventListener('loadingdone', () => { sched
 
 /* ---------- rendering the app ---------- */
 let storyParas = toParas(state.story);
-let trial = null, pendingResult = null;
+let trial = null, pendingResult = null, currentScreen = 'home';
 
 function refreshReader(){
-  if (trial) return;
+  if (trial || currentScreen === 'read' || currentScreen === 'check') return;
   setPane(A, storyParas, state.settings);
   const setup = state.setups.find(x => x.id === state.compareId);
   $('paneB').hidden = !setup;
@@ -923,6 +1171,7 @@ function applyLink(){
   if (!hasSettings && story == null) return;
   history.replaceState(null, '', location.pathname + location.search);
   if (trial) endTrial();
+  show('advanced');
   if (hasSettings){
     state.settings = settingsFromLink(q);
     state.compareId = '';
@@ -939,9 +1188,309 @@ function applyLink(){
   if (q.get('view') === 'read') setPanelHidden(true);
 }
 
+/* ---------- screens ---------- */
+const VIEWS = {home:'homeView', game:'gameView', done:'doneView', nan:'nanView'};
+function show(name){
+  stopSpeech();
+  currentScreen = name;
+  const inReader = name === 'read' || name === 'check';
+  for (const k in VIEWS) $(VIEWS[k]).hidden = k !== name;
+  $('topBar').hidden = name !== 'advanced';
+  $('appView').hidden = !inReader && name !== 'advanced';
+  document.body.classList.toggle('reading', inReader);
+  document.documentElement.classList.toggle('immersive', name !== 'advanced');
+  $('readBar').hidden = name !== 'read';
+  $('pageBar').hidden = name !== 'read';
+  $('checkBar').hidden = name !== 'check';
+  if (inReader){ $('paneB').hidden = true; $('labelA').hidden = true; }
+  if (name === 'home') renderShelf();
+  if (name === 'nan') renderNan();
+  if (name === 'advanced'){
+    setStoryControls();
+    refreshReader();
+  }
+  window.scrollTo(0, 0);
+}
+function setStoryControls(){
+  $('story').value = state.story;
+  renderStoryInfo(); renderCompare(); syncControls(); renderSetups(); renderTest();
+}
+const pagesOf = story => passages(story.text, PAGE_WORDS);
+const niceDate = iso => new Date(iso).toLocaleDateString('en-GB', {day:'numeric', month:'long', year:'numeric'});
+
+/* ---------- Jessica's shelf and reader ---------- */
+function lookStyle(el, s){
+  Object.assign(el.style, {fontFamily:fontOf(s).css, color:s.fg, background:s.bg, fontSize:s.size + 'px',
+    lineHeight:s.lh, letterSpacing:s.ls + 'em', wordSpacing:s.ws + 'em'});
+}
+function renderShelf(){
+  $('shelf').replaceChildren(...state.stories.map(story => {
+    const total = pagesOf(story).length;
+    const card = h('button', {class:'big-card', onclick:() => openStory(story.id)}, story.title,
+      story.page > 0 && story.page < total ? h('small', null, `Page ${story.page + 1} of ${total}`) : null);
+    Object.assign(card.style, {fontFamily:fontOf(state.settings).css, color:state.settings.fg, background:state.settings.bg});
+    return card;
+  }));
+  if (!state.stories.length) $('shelf').append(h('p', {class:'muted'}, 'Nan can add a story.'));
+}
+let reading = null;
+function openStory(id){
+  const story = state.stories.find(x => x.id === id), pages = story && pagesOf(story);
+  if (!pages || !pages.length) return;
+  story.page = Math.min(story.page, pages.length - 1);
+  reading = {story, pages};
+  show('read');
+  $('readTitle').textContent = story.title;
+  showPage();
+}
+function showPage(){
+  const {story, pages} = reading, last = story.page === pages.length - 1;
+  stopSpeech();
+  setPane(A, pages[story.page].paras, state.settings);
+  A.scroller.scrollTop = 0;
+  $('pageNum').textContent = `Page ${story.page + 1} of ${pages.length}`;
+  $('prevPage').style.visibility = story.page ? 'visible' : 'hidden';
+  $('nextPage').textContent = last ? 'I finished!' : 'Next page';
+  save();
+}
+function nextPage(){
+  const {story, pages} = reading;
+  if (story.page < pages.length - 1){ story.page++; showPage(); return; }
+  story.page = 0;
+  story.reads.push(new Date().toISOString());
+  save();
+  $('doneAgain').hidden = false;
+  show('done');
+}
+
+/* ---------- "Which is easier?" game ---------- */
+let game = null;
+function startGame(){
+  game = {look:{...state.settings, ...CREAM, font:'andika', size:24, lh:1.7, ls:0, ws:0, align:'left'}, round:0};
+  $('gameDone').hidden = true; $('gamePlay').hidden = false;
+  show('game');
+  renderRound();
+  sayPrompt('Which one is easier to read? Tap it.');
+}
+function roundLooks(round, look){
+  return {a:{...look, ...(round.a || {})}, b:{...look, ...round.b}};
+}
+function renderRound(){
+  const round = GAME_ROUNDS[game.round], looks = roundLooks(round, game.look);
+  const card = opt => {
+    const el = h('button', {class:'game-card-choice', onclick:() => pick(opt, el)}, round.text);
+    el.dataset.opt = opt;
+    lookStyle(el, looks[opt]);
+    return el;
+  };
+  // Swap sides at random so the same side isn't always the look so far.
+  const order = Math.random() < 0.5 ? ['a', 'b'] : ['b', 'a'];
+  $('gameCards').replaceChildren(...order.map(card));
+  $('gameRound').textContent = `Round ${game.round + 1} of ${GAME_ROUNDS.length}`;
+}
+function pick(opt, el){
+  if (game.locked) return;
+  game.locked = true;
+  if (el) el.classList.add('picked');
+  const current = game;
+  setTimeout(() => {
+    if (game !== current) return;
+    game.locked = false;
+    game.look = roundLooks(GAME_ROUNDS[game.round], game.look)[opt];
+    game.round++;
+    if (game.round < GAME_ROUNDS.length) renderRound();
+    else finishGame();
+  }, 250);
+}
+function finishGame(){
+  $('gamePlay').hidden = true; $('gameDone').hidden = false;
+  lookStyle($('gameWinner'), game.look);
+  $('gameWinner').textContent = 'Jessica held the string tight, and up went the kite.';
+  sayPrompt('This is your look!');
+}
+function keepLook(){
+  state.settings = cleanSettings(game.look);
+  game = null;
+  changed();
+  saveNow();
+  show('home');
+}
+
+/* ---------- Nan's reading checks ---------- */
+let check = null;
+function startCheck(){
+  const passage = CHECKS[state.checks.length % CHECKS.length];
+  $('checkStatus').textContent = '';
+  show('check');
+  setPane(A, toParas(passage.text), state.settings);
+  A.scroller.scrollTop = 0;
+  check = {id:passage.id, words:countWords(passage.text), start:performance.now()};
+}
+function finishCheck(){
+  const ms = performance.now() - check.start, wpm = Math.round(check.words / (ms / 60000)), c = check;
+  check = null;
+  // Reading aloud at this speed isn't plausible, so it was probably a mis-tap.
+  if (wpm > 300){
+    $('checkStatus').textContent = "That was too quick to be a real reading, so it wasn't saved.";
+    show('nan');
+    return;
+  }
+  state.checks.push({id:c.id, words:c.words, ms:Math.round(ms), wpm, at:new Date().toISOString(), settings:{...state.settings}});
+  saveNow();
+  $('doneAgain').hidden = true;
+  show('done');
+}
+function renderNan(){
+  $('nanSetup').hidden = navigator.standalone !== false;
+  const cs = state.checks, first = cs[0], latest = cs[cs.length - 1];
+  $('thenNow').replaceChildren(...(cs.length > 1
+    ? [h('p', {class:'then-now'}, `${niceDate(first.at)}: about ${first.wpm} words a minute.`, h('br'), `${niceDate(latest.at)}: about ${latest.wpm} words a minute.`),
+       h('p', {class:'muted'}, 'One reading can vary a lot from day to day, so look for the pattern over several checks.')]
+    : [h('p', {class:'muted'}, cs.length ? 'One check saved. You will see then and now after the next one.' : 'No checks yet.')]));
+  $('checkRepeat').hidden = cs.length < CHECKS.length;
+  $('checkList').replaceChildren(...cs.slice().reverse().map(c => h('li', null,
+    h('strong', null, `${niceDate(c.at)}: about ${c.wpm} words a minute`),
+    h('button', {class:'small', style:'margin-top:.3rem', 'aria-label':`Delete the check from ${niceDate(c.at)}`, onclick:() => {
+      if (!confirm('Delete this reading check?')) return;
+      state.checks = state.checks.filter(o => o !== c);
+      saveNow(); renderNan();
+    }}, 'Delete'))));
+  $('nanStories').replaceChildren(...state.stories.map(story => {
+    const n = story.reads.length;
+    return h('li', null, h('strong', null, story.title),
+      h('span', {class:'muted'}, n ? `Finished ${n === 1 ? 'once' : n + ' times'}, last on ${niceDate(story.reads[n - 1])}` : 'Not finished yet'),
+      h('div', {class:'row', style:'margin-top:.3rem'},
+        h('button', {class:'small', 'aria-label':'Edit ' + story.title, onclick:() => editStory(story)}, 'Edit'),
+        h('button', {class:'small', 'aria-label':'Delete ' + story.title, onclick:() => {
+          if (!confirm(`Delete "${story.title}"?`)) return;
+          state.stories = state.stories.filter(o => o !== story);
+          if (editing === story) clearStoryForm();
+          saveNow(); renderNan();
+        }}, 'Delete')));
+  }));
+}
+let editing = null;
+function clearStoryForm(){
+  editing = null;
+  $('newTitle').value = ''; $('newText').value = '';
+  $('storyFormTitle').textContent = 'Add a story';
+  $('cancelEdit').hidden = true;
+}
+function editStory(story){
+  editing = story;
+  $('newTitle').value = story.title; $('newText').value = story.text;
+  $('storyFormTitle').textContent = 'Edit this story';
+  $('cancelEdit').hidden = false;
+  $('storyStatus').textContent = '';
+  $('newTitle').focus();
+}
+function saveStory(){
+  const text = $('newText').value.trim();
+  if (!text){ $('storyStatus').textContent = 'Paste or type a story first.'; return; }
+  const title = $('newTitle').value.trim() || text.split(/\s+/).slice(0, 5).join(' ');
+  if (editing){
+    editing.title = title; editing.text = text; editing.page = 0;
+  } else {
+    state.stories.push({id:'u' + Date.now(), title, text, page:0, reads:[]});
+  }
+  clearStoryForm();
+  $('storyStatus').textContent = '';
+  saveNow(); renderNan();
+}
+
+/* ---------- safe copy ---------- */
+async function backup(){
+  saveNow();
+  const name = `jessential-copy-${new Date().toISOString().slice(0, 10)}.json`;
+  const body = JSON.stringify({app:'jessential', version:1, state}, null, 1);
+  const file = new File([body], name, {type:'application/json'});
+  if (navigator.canShare && navigator.canShare({files:[file]})){
+    try { await navigator.share({files:[file]}); $('backupStatus').textContent = ''; }
+    catch (e) { if (e.name !== 'AbortError') $('backupStatus').textContent = "The copy couldn't be saved. Please try again."; }
+    return;
+  }
+  const url = URL.createObjectURL(file);
+  const a = h('a', {href:url, download:name});
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+async function restore(file){
+  let copy;
+  try { copy = JSON.parse(await file.text()); } catch (e) { copy = null; }
+  $('restoreFile').value = '';
+  if (!copy || copy.app !== 'jessential' || !copy.state || typeof copy.state !== 'object'){
+    $('backupStatus').textContent = "That file isn't a Jessential! copy, so nothing was changed.";
+    return;
+  }
+  if (!confirm('Replace everything on this iPad with this copy?')) return;
+  clearTimeout(saveTimer); saveTimer = 0;
+  try {
+    localStorage.setItem(STORE_KEY, JSON.stringify(copy.state));
+  } catch (e) {
+    $('backupStatus').textContent = "This browser couldn't save the copy, so nothing was changed.";
+    return;
+  }
+  location.reload();
+}
+
+/* ---------- Nan's door: a press and hold, so it isn't opened by accident ---------- */
+function wireNanDoor(){
+  const door = $('nanDoor');
+  let timer = 0;
+  const release = () => { clearTimeout(timer); door.classList.remove('holding'); };
+  door.addEventListener('pointerdown', () => {
+    door.classList.add('holding');
+    timer = setTimeout(() => { release(); show('nan'); }, 1200);
+  });
+  for (const type of ['pointerup', 'pointerleave', 'pointercancel']) door.addEventListener(type, release);
+  door.addEventListener('contextmenu', e => e.preventDefault());
+  // A keyboard press has no pointer to hold, and detail is 0 for keyboard clicks.
+  door.addEventListener('click', e => { if (e.detail === 0) show('nan'); });
+}
+
 /* ---------- read aloud ---------- */
 const synth = window.speechSynthesis;
-let speakToken = 0, spokenEl = null;
+let speakToken = 0, spokenEl = null, speaking = false;
+function setSpeaking(on){
+  speaking = on;
+  $('speak').textContent = on ? 'Stop reading' : 'Read aloud';
+  $('listen').textContent = on ? 'Stop' : 'Listen';
+}
+function bestVoice(){
+  const voices = synth.getVoices();
+  return voices.find(v => v.voiceURI === state.voice)
+    || voices.find(v => v.lang.replace('_', '-') === 'en-GB' && v.localService)
+    || voices.find(v => v.lang.replace('_', '-') === 'en-GB');
+}
+function utterance(text, rate){
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'en-GB';
+  u.rate = rate;
+  const voice = bestVoice();
+  if (voice) u.voice = voice;
+  return u;
+}
+// iPadOS can drop speech that starts straight after a cancel, so leave a short gap.
+function speakAfterStop(start){
+  const busy = synth.speaking || synth.pending;
+  stopSpeech();
+  const token = speakToken, run = () => { if (token === speakToken) start(); };
+  if (busy) setTimeout(run, 80); else run();
+}
+function sayWord(el){
+  if (!synth) return;
+  const text = el.textContent.trim().replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, '');
+  if (!text) return;
+  speakAfterStop(() => {
+    const token = speakToken, u = utterance(text, Math.min(state.ttsRate, 0.8));
+    markSpoken(el);
+    u.onend = u.onerror = () => { if (token === speakToken) markSpoken(null); };
+    synth.speak(u);
+  });
+}
+function sayPrompt(text){
+  if (synth) speakAfterStop(() => synth.speak(utterance(text, state.ttsRate)));
+}
 function markSpoken(el){
   if (spokenEl) spokenEl.classList.remove('speaking');
   spokenEl = el;
@@ -956,7 +1505,7 @@ function stopSpeech(){
   speakToken++;
   synth.cancel();
   markSpoken(null);
-  $('speak').textContent = 'Read aloud';
+  setSpeaking(false);
 }
 function speakGroup(i, token){
   if (token !== speakToken) return;
@@ -965,10 +1514,7 @@ function speakGroup(i, token){
   const text = g.words.join(' '), starts = [];
   let at = 0;
   for (const w of g.words){ starts.push(at); at += w.length + 1; }
-  const u = new SpeechSynthesisUtterance(text);
-  u.rate = state.ttsRate;
-  const voice = synth.getVoices().find(v => v.voiceURI === state.voice);
-  if (voice) u.voice = voice;
+  const u = utterance(text, state.ttsRate);
   u.onboundary = e => {
     if (token !== speakToken || (e.name && e.name !== 'word')) return;
     let k = starts.length - 1;
@@ -980,15 +1526,15 @@ function speakGroup(i, token){
   synth.speak(u);
 }
 function toggleSpeech(){
-  if ($('speak').textContent !== 'Read aloud'){ stopSpeech(); return; }
+  if (speaking){ stopSpeech(); return; }
   if (!A.groups || !A.groups.length) return;
   const top = A.scroller.getBoundingClientRect().top;
   let first = A.groups.findIndex(g => g.el.getBoundingClientRect().bottom > top);
   if (first < 0) first = 0;
-  const token = ++speakToken;
-  $('speak').textContent = 'Stop reading';
-  synth.cancel();
-  speakGroup(first, token);
+  speakAfterStop(() => {
+    setSpeaking(true);
+    speakGroup(first, ++speakToken);
+  });
 }
 function fillVoices(){
   if (!synth) return;
@@ -1002,12 +1548,42 @@ function fillVoices(){
 
 /* ---------- wiring ---------- */
 function init(){
+  if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
   buildControls();
   $('story').value = state.story;
   renderStoryInfo(); renderCompare(); syncControls(); renderSetups(); renderTest();
   selectTab(['story','look','aids','setups','test'].includes(state.tab) ? state.tab : 'story');
   setPanelHidden(!!state.panelHidden);
   refreshReader();
+  show(location.hash === '#settings' ? 'advanced' : 'home');
+
+  $('playGame').addEventListener('click', startGame);
+  $('gameStop').addEventListener('click', () => { game = null; show('home'); });
+  $('gameHear').addEventListener('click', () => sayPrompt('Which one is easier to read? Tap it.'));
+  $('gameSame').addEventListener('click', () => pick('a'));
+  $('gameKeep').addEventListener('click', keepLook);
+  $('gameAgain').addEventListener('click', startGame);
+  $('readHome').addEventListener('click', () => { save(); show('home'); });
+  $('listen').addEventListener('click', toggleSpeech);
+  $('prevPage').addEventListener('click', () => { reading.story.page--; showPage(); });
+  $('nextPage').addEventListener('click', nextPage);
+  $('doneAgain').addEventListener('click', () => openStory(reading.story.id));
+  $('doneHome').addEventListener('click', () => show('home'));
+  wireNanDoor();
+  $('nanBack').addEventListener('click', () => show('home'));
+  $('startCheck').addEventListener('click', startCheck);
+  $('finishCheck').addEventListener('click', finishCheck);
+  $('cancelCheck').addEventListener('click', () => { check = null; show('nan'); });
+  $('saveStory').addEventListener('click', saveStory);
+  $('cancelEdit').addEventListener('click', clearStoryForm);
+  $('backup').addEventListener('click', backup);
+  $('restoreBtn').addEventListener('click', () => $('restoreFile').click());
+  $('restoreFile').addEventListener('change', e => { if (e.target.files[0]) restore(e.target.files[0]); });
+  $('openAdvanced').addEventListener('click', () => show('advanced'));
+  $('advancedBack').addEventListener('click', () => {
+    if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+    show('nan');
+  });
 
   let storyTimer = 0;
   $('story').addEventListener('input', e => {
@@ -1087,6 +1663,8 @@ function init(){
     addEventListener('pagehide', () => synth.cancel());
   } else {
     $('ttsBox').hidden = true;
+    $('listen').hidden = true;
+    $('gameHear').style.visibility = 'hidden';
   }
 }
 init();

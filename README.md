@@ -1,6 +1,10 @@
 # Jessential!
 
-Paste a story, then compare fonts, colours and reading aids to find out what makes it easiest to read. It is a static page with no back end. All data stays in the browser's `localStorage`.
+A reading companion for Jessica, on an iPad at her nan's. She plays "Which is easier?" to choose her best look, then reads stories page by page. She can tap any word to hear it, or listen to a page before reading it herself.
+
+Nan's page opens with a press and hold. It holds the stories, occasional timed reading checks and a safe copy of the data. "All settings and tools" leads to the fonts, colours, reading aids, setups and links.
+
+It is a static page with no back end. All data stays in the browser's `localStorage`. On an iPad, add it to the Home Screen before adding stories: Safari can delete saved data from a site that hasn't been opened for 7 days.
 
 ## Host on GitHub Pages
 

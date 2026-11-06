@@ -5,7 +5,13 @@ module.exports = defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   reporter: 'list',
-  use: { baseURL: 'http://127.0.0.1:4173', ...devices['Desktop Chrome'] },
+  use: { baseURL: 'http://127.0.0.1:4173' },
+  projects: [
+    { name: 'chromium', use: devices['Desktop Chrome'] },
+    // Jessica's screens are for an iPad, so they also run in WebKit at iPad size.
+    { name: 'ipad', testMatch: 'jessica.spec.js', use: devices['iPad (gen 7) landscape'] },
+    { name: 'ipad-portrait', testMatch: 'jessica.spec.js', use: devices['iPad (gen 7)'] },
+  ],
   webServer: {
     command: 'python3 -m http.server 4173 --bind 127.0.0.1',
     url: 'http://127.0.0.1:4173/index.html',
