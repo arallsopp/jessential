@@ -887,3 +887,37 @@ test.describe('fits the iPad', () => {
     expect(await page.locator('#paneA').evaluate(el => el.getBoundingClientRect().height)).toBeGreaterThan(200);
   });
 });
+
+test.describe('no zooming by double-tap', () => {
+  // Every element must block double-tap zoom ('manipulation'), or block all gestures ('none').
+  const zoomable = page => page.evaluate(() => [...document.querySelectorAll('body, body *')]
+    .filter(el => el.getClientRects().length && !['manipulation', 'none'].includes(getComputedStyle(el).touchAction))
+    .map(el => el.tagName.toLowerCase() + (el.id ? '#' + el.id : '')).slice(0, 10));
+
+  test('nothing on any screen zooms when tapped twice', async ({ page }) => {
+    expect(await zoomable(page)).toEqual([]);              // her home
+    await openKite(page);
+    expect(await zoomable(page)).toEqual([]);              // reading
+    await page.click('#readHome');
+    await page.click('#playGame');
+    expect(await zoomable(page)).toEqual([]);              // games
+    await page.click('#lookHome');
+    await holdPamDoor(page);
+    expect(await zoomable(page)).toEqual([]);              // Pam's page
+    await backHome(page);
+    await page.click('#notMe');
+    expect(await zoomable(page)).toEqual([]);              // who's reading
+  });
+
+  test('pinch zoom is still allowed, for anyone who needs it', async ({ page }) => {
+    const vp = await page.locator('meta[name=viewport]').getAttribute('content');
+    expect(vp).not.toMatch(/user-scalable\s*=\s*no|maximum-scale\s*=\s*1(\D|$)/);
+  });
+
+  test('text boxes are big enough that iOS does not zoom into them', async ({ page }) => {
+    await holdPamDoor(page);
+    for (const id of ['#newTitle', '#newText']) {
+      expect(parseFloat(await page.locator(id).evaluate(el => getComputedStyle(el).fontSize))).toBeGreaterThanOrEqual(16);
+    }
+  });
+});

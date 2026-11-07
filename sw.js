@@ -3,7 +3,7 @@
 //
 // VERSION is set by `npm run stamp` from the files below. A new VERSION makes devices
 // download the new files and offer "Update now". The tests fail if it is out of date.
-const VERSION = '82c794269684';
+const VERSION = '674cf7a63d7b';
 const CACHE = 'jessential-' + VERSION;
 const FILES = [
   'index.html',
