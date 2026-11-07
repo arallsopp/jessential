@@ -1,6 +1,6 @@
 # Jessential!
 
-A reading companion for Jessica, on an iPad at Pam's. She plays "Which is easier?" to choose her best look, then reads stories page by page. She can tap any word to hear it, or listen to a page before reading it herself.
+A reading companion for Jessica and Zachary, on an iPad at Pam's. It opens on "Who's reading?", and each child has their own stories and look. Zachary's stories show one short paragraph per page. They play "Which is easier?" to tune their look, then read stories page by page. She can tap any word to hear it, or listen to a page before reading it herself.
 
 Pam's page opens with a press and hold. It holds the stories, occasional timed reading checks and a safe copy of the data. "All settings and tools" leads to the fonts, colours, reading aids, setups and links.
 

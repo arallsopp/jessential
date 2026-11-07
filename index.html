@@ -167,6 +167,13 @@ article p{margin:0 0 calc(var(--r-pg)*1em)}
 .big-card small{display:block;font-size:1rem;font-weight:400;opacity:.8}
 .big-card.game-card{background:var(--ui-accent);border-color:var(--ui-accent);color:var(--ui-on-accent);margin-bottom:1.75rem}
 .shelf-title{font-size:1.25rem;margin:0 0 .75rem}
+.home-head{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin:0 0 1.25rem}
+.home-head .home-title{margin:0}
+.home-head button{min-height:48px;color:var(--ui-muted)}
+.who-cards{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.who-card{min-height:180px;font-size:2.5rem;font-weight:700;border:3px solid var(--ui-line);border-radius:18px}
+.reader-switch{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin:0 0 1rem}
+.reader-switch button[aria-pressed=true]{background:var(--ui-accent);border-color:var(--ui-accent);color:var(--ui-on-accent);font-weight:700}
 .pam-door{position:relative;overflow:hidden;display:block;margin:2rem auto 0;min-height:48px;padding:.3rem 1.25rem;color:var(--ui-muted);-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:none}
 .pam-door small{display:block;font-size:.8rem}
 .pam-door::before{content:"";position:absolute;inset:0;background:var(--ui-soft);transform:scaleX(0);transform-origin:left;z-index:-1}
@@ -225,7 +232,7 @@ html.immersive body{height:100dvh}
 @media (max-width:640px){
   .game-cards{grid-template-columns:1fr}
   .game-card-choice{min-height:150px}
-  .parts{grid-template-columns:1fr}
+  .parts,.who-cards{grid-template-columns:1fr}
   .game-ask,.home-title{font-size:1.75rem}
 }
 @media (max-width:800px){
@@ -237,9 +244,19 @@ html.immersive body{height:100dvh}
 </style>
 </head>
 <body>
+<section class="view" id="whoView" hidden>
+  <div class="view-inner">
+    <h1 class="home-title">Who's reading?</h1>
+    <div class="who-cards" id="whoCards"></div>
+  </div>
+</section>
+
 <section class="view" id="homeView" hidden>
   <div class="view-inner">
-    <h1 class="home-title">Hello, Jessica!</h1>
+    <div class="home-head">
+      <h1 class="home-title" id="homeTitle"></h1>
+      <button id="notMe"></button>
+    </div>
     <button id="playGame" class="big-card game-card">Which is easier?<small>Play games to find your best look</small></button>
     <h2 class="shelf-title">Your stories</h2>
     <div id="shelf"></div>
@@ -283,7 +300,7 @@ html.immersive body{height:100dvh}
 <section class="view" id="doneView" hidden>
   <div class="game-done" style="min-height:100%">
     <svg class="star" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l3 6.500 7 .9-5.100 4.900 1.300 7L12 17.900 5.800 21.300l1.300-7L2 9.400l7-.9z"/></svg>
-    <h1>Well done, Jessica!</h1>
+    <h1 id="doneTitle"></h1>
     <div class="big-actions">
       <button id="doneAgain">Read it again</button>
       <button id="doneHome" class="primary">Back to my stories</button>
@@ -295,7 +312,11 @@ html.immersive body{height:100dvh}
   <div class="view-inner">
     <div class="row" style="justify-content:space-between;margin-bottom:1rem">
       <h1 style="font-size:1.5rem">Pam's page</h1>
-      <button id="pamBack">Back to Jessica's stories</button>
+      <button id="pamBack"></button>
+    </div>
+    <div class="reader-switch" role="group" aria-label="Whose things to show">
+      <span>Showing:</span>
+      <span id="readerSwitch" class="row"></span>
     </div>
 
     <section class="pam-section pam-setup" id="pamSetup" hidden>
@@ -309,7 +330,7 @@ html.immersive body{height:100dvh}
       <p class="muted" style="margin:0">Anything saved in Safari doesn't carry over to the icon, so add stories after you've done this.</p>
     </section>
 
-    <section class="pam-section">
+    <section class="pam-section" id="checkSection">
       <h2>Then and now</h2>
       <div id="thenNow"></div>
       <p>Every few weeks, ask Jessica to read a new short passage aloud to you. She won't see a timer or a number, so there's nothing to race.</p>
@@ -320,13 +341,14 @@ html.immersive body{height:100dvh}
     </section>
 
     <section class="pam-section">
-      <h2>Jessica's stories</h2>
+      <h2 id="storiesTitle"></h2>
       <ul class="pam-list" id="pamStories"></ul>
       <h2 id="storyFormTitle" style="margin-top:1rem">Add a story</h2>
       <label class="label" for="newTitle">Title</label>
       <input type="text" id="newTitle" maxlength="80">
       <label class="label" for="newText" style="margin-top:.5rem">Story</label>
       <textarea id="newText"></textarea>
+      <p class="muted" id="storyHint" style="margin:-.25rem 0 .5rem"></p>
       <div class="row">
         <button id="saveStory" class="primary">Save story</button>
         <button id="cancelEdit" hidden>Cancel</button>
@@ -335,21 +357,31 @@ html.immersive body{height:100dvh}
     </section>
 
     <section class="pam-section">
-      <h2>Jessica's look</h2>
+      <h2 id="lookTitle"></h2>
       <p id="lookNow"></p>
       <ul class="look-summary" id="lookSummary"></ul>
-      <p class="muted" style="margin:0">Each game starts from her current look, and only changes it if she picks the change twice. Playing them again every month or two keeps it tuned as her reading grows.</p>
+      <p class="muted" style="margin:0">Each game starts from their current look, and only changes it if they pick the change twice. Playing them again every month or two keeps it tuned as their reading grows.</p>
     </section>
 
     <section class="pam-section">
       <h2>Keep a safe copy</h2>
-      <p class="muted">Saves the stories, look and reading checks as a file, in case the iPad is reset or replaced.</p>
+      <p class="muted">Saves both children's stories and looks, and the reading checks, as a file, in case the iPad is reset or replaced.</p>
       <div class="row">
         <button id="backup">Save a copy</button>
         <button id="restoreBtn">Restore a copy</button>
         <input type="file" id="restoreFile" accept=".json,application/json" hidden>
       </div>
       <p class="muted" id="backupStatus" role="status" style="margin:.5rem 0 0"></p>
+    </section>
+
+    <section class="pam-section">
+      <h2>Start again</h2>
+      <p class="muted">Save a copy first if you might want anything back.</p>
+      <p><button id="resetPrefs"></button><br>
+        <span class="muted" id="resetPrefsNote"></span></p>
+      <p style="margin:0"><button id="eraseAll">Erase everything</button><br>
+        <span class="muted">Deletes everything saved on this iPad, for both children: their stories, looks and game results, and the reading checks. The app starts again with just the kite story and the digger story.</span></p>
+      <p class="muted" id="resetStatus" role="status" style="margin:.5rem 0 0"></p>
     </section>
 
     <button id="openAdvanced">All settings and tools</button>
@@ -380,7 +412,7 @@ html.immersive body{height:100dvh}
       <p class="muted" style="margin-top:.5rem">Your story and results stay in this browser. Nothing is uploaded.</p>
       <button id="sample">Use the sample story</button>
       <div class="danger-zone">
-        <button id="wipe" class="small">Erase all saved data</button>
+        <button id="wipe" class="small">Erase everything</button>
         <p class="muted" style="margin-top:.4rem" id="saveStatus" role="status"></p>
       </div>
     </section>
@@ -676,15 +708,64 @@ function shuffle(list){
   return a;
 }
 
+/* ---------- readers ---------- */
+const DIGGER = `Zachary has a little red digger. It can dig. Dig, dig, dig!
+
+One day, Zachary sees a big digger. It is yellow. It is big! Brrm, brrm!
+
+Dad gets out of the big digger. "I am going to dig a pond," he said.
+
+The big digger digs in the mud. Dig, dig, dig! It digs a big hole.
+
+Then the rain comes. Drip, drop, drip, drop. The mud gets wet.
+
+The big digger is stuck! It can not get out. "Oh no!" said Dad.
+
+Zachary has a plan. "Push the bucket down!" he said.
+
+Dad pushes the bucket down. Up, up, up! The big digger gets out.
+
+"Well done, Zachary!" said Dad.
+
+Now the hole is a pond. A duck jumps in. Splash!
+
+Zachary gets his little red digger. Dig, dig, dig!`;
+const SHORT_PAGE_WORDS = 20;
+// Each reader has their own look, stories and game results. The active reader's are kept
+// in state.settings, state.stories and state.lookLog; the others wait in state.others.
+const READERS = [
+  {id:'jessica', name:'Jessica', shortPages:false, look:{}, winner:'Up went the kite, high in the sky.',
+    stories:() => [{id:'sample', title:SAMPLE_TITLE, text:SAMPLE, page:0, reads:[]}]},
+  // Short pages and large, learner-friendly letters for a five or six year old.
+  // His games use very short sentences of simple, sound-it-out words.
+  {id:'zachary', name:'Zachary', shortPages:true, look:{font:'andika', size:36, lh:1.8, fg:'#1f1c14', bg:'#fdf6e3'},
+    winner:'The big digger digs in the mud.',
+    sentence:['The dog sat on a mat.', 'Dad has a big red bus.', 'The cat is in the box.', 'I can see a duck.',
+      'The digger digs in the mud.', 'A fox ran to the den.', 'The sun is hot.', 'Mum has a hat.',
+      'The pig is in the mud.', 'I can hop and jump.', 'The bug is on the log.', 'A big fish is in the net.',
+      'The van is red.', 'Dad and I dig.', 'The hen sat on an egg.', 'I can run fast.'],
+    paragraph:['The dog ran. It got wet. Splash!', 'Dad has a van. It is red. Beep, beep!',
+      'The cat sat on a log. It had a nap.', 'I can dig in the sand. Dig, dig, dig!',
+      'The duck is in the pond. Quack, quack!', 'The sun is up. We go to the park.',
+      'A frog sat on a rock. Hop, hop, hop!', 'The big digger is stuck. Push! Push!'],
+    stories:() => [{id:'digger', title:'Zachary and the Big Digger', text:DIGGER, page:0, reads:[]}]},
+];
+const readerInfo = id => READERS.find(r => r.id === id) || READERS[0];
+const reader = () => readerInfo(state.reader);
+const readerDefaults = id => ({...DEFAULTS, ...readerInfo(id).look});
+const freshProfile = id => ({settings:readerDefaults(id), stories:readerInfo(id).stories(), lookLog:{}});
+const cleanLog = log => log && typeof log === 'object' && !Array.isArray(log) ? log : {};
+
 /* ---------- state and storage ---------- */
 function defaultState(){
-  return {story:'', settings:{...DEFAULTS}, setups:seedSetups(), trials:[], passageIdx:0, compareId:'', tab:'story', panelHidden:false, ttsRate:0.9, voice:'', stories:seedStories(), checks:[], lookLog:{}};
+  const others = {};
+  for (const r of READERS.slice(1)) others[r.id] = freshProfile(r.id);
+  return {story:'', settings:{...DEFAULTS}, setups:seedSetups(), trials:[], passageIdx:0, compareId:'', tab:'story', panelHidden:false,
+    ttsRate:0.9, voice:'', stories:seedStories(), checks:[], lookLog:{}, reader:READERS[0].id, others};
 }
-function seedStories(){
-  return [{id:'sample', title:SAMPLE_TITLE, text:SAMPLE, page:0, reads:[]}];
-}
-function cleanStories(list){
-  if (!Array.isArray(list)) return seedStories();
+function seedStories(id = READERS[0].id){ return readerInfo(id).stories(); }
+function cleanStories(list, id){
+  if (!Array.isArray(list)) return seedStories(id);
   return list.filter(x => x && typeof x.text === 'string' && x.text.trim()).map((x, i) => ({
     id:String(x.id || 'r' + i), title:String(x.title || 'A story'), text:x.text,
     page:Number.isInteger(x.page) && x.page >= 0 ? x.page : 0,
@@ -708,9 +789,19 @@ function load(){
       st.settings = cleanSettings(saved.settings);
       st.setups = Array.isArray(saved.setups) ? saved.setups.map(x => ({...x, settings:cleanSettings(x.settings)})) : seedSetups();
       st.trials = Array.isArray(saved.trials) ? saved.trials.map(x => ({...x, settings:cleanSettings(x.settings)})) : [];
-      st.stories = cleanStories(saved.stories);
+      st.reader = readerInfo(saved.reader).id;
+      st.stories = cleanStories(saved.stories, st.reader);
       st.checks = cleanChecks(saved.checks);
-      st.lookLog = saved.lookLog && typeof saved.lookLog === 'object' && !Array.isArray(saved.lookLog) ? saved.lookLog : {};
+      st.lookLog = cleanLog(saved.lookLog);
+      // Data saved before there were two readers has no `others`, so the other readers start fresh.
+      st.others = {};
+      for (const r of READERS){
+        if (r.id === st.reader) continue;
+        const p = saved.others && saved.others[r.id];
+        st.others[r.id] = p && typeof p === 'object'
+          ? {settings:cleanSettings(p.settings), stories:cleanStories(p.stories, r.id), lookLog:cleanLog(p.lookLog)}
+          : freshProfile(r.id);
+      }
     }
   } catch (e) { /* Unreadable or blocked storage: start with defaults. */ }
   return st;
@@ -1254,7 +1345,7 @@ function applyLink(){
 }
 
 /* ---------- screens ---------- */
-const VIEWS = {home:'homeView', look:'lookView', game:'gameView', done:'doneView', pam:'pamView'};
+const VIEWS = {who:'whoView', home:'homeView', look:'lookView', game:'gameView', done:'doneView', pam:'pamView'};
 function show(name){
   stopSpeech();
   currentScreen = name;
@@ -1268,6 +1359,7 @@ function show(name){
   $('pageBar').hidden = name !== 'read';
   $('checkBar').hidden = name !== 'check';
   if (inReader){ $('paneB').hidden = true; $('labelA').hidden = true; }
+  if (name === 'who') renderWho();
   if (name === 'home') renderShelf();
   if (name === 'pam'){ renderPam(); renderLookSummary(); }
   if (name === 'look') renderParts();
@@ -1281,7 +1373,30 @@ function setStoryControls(){
   $('story').value = state.story;
   renderStoryInfo(); renderCompare(); syncControls(); renderSetups(); renderTest();
 }
-const pagesOf = story => passages(story.text, PAGE_WORDS);
+// Short pages give each paragraph its own page, split further only if it is long.
+const pagesOf = story => reader().shortPages
+  ? toParas(story.text).flatMap(p => passages(p, SHORT_PAGE_WORDS))
+  : passages(story.text, PAGE_WORDS);
+function switchReader(id){
+  if (id === state.reader || !READERS.some(r => r.id === id)) return;
+  state.others[state.reader] = {settings:state.settings, stories:state.stories, lookLog:state.lookLog};
+  const p = state.others[id];
+  delete state.others[id];
+  Object.assign(state, {reader:id, settings:p.settings, stories:p.stories, lookLog:p.lookLog});
+  reading = null; game = null;
+  if (editing) clearStoryForm();
+  renderCompare();
+  changed();
+  saveNow();
+}
+function renderWho(){
+  $('whoCards').replaceChildren(...READERS.map(r => {
+    const look = r.id === state.reader ? state.settings : state.others[r.id].settings;
+    const card = h('button', {class:'who-card', id:'who-' + r.id, onclick:() => { switchReader(r.id); show('home'); }}, r.name);
+    Object.assign(card.style, {fontFamily:fontOf(look).css, color:look.fg, background:look.bg});
+    return card;
+  }));
+}
 const niceDate = iso => new Date(iso).toLocaleDateString('en-GB', {day:'numeric', month:'long', year:'numeric'});
 
 /* ---------- Jessica's shelf and reader ---------- */
@@ -1290,6 +1405,9 @@ function lookStyle(el, s){
     lineHeight:s.lh, letterSpacing:s.ls + 'em', wordSpacing:s.ws + 'em'});
 }
 function renderShelf(){
+  $('homeTitle').textContent = `Hello, ${reader().name}!`;
+  $('notMe').textContent = `Not ${reader().name}?`;
+  $('doneTitle').textContent = `Well done, ${reader().name}!`;
   $('shelf').replaceChildren(...state.stories.map(story => {
     const total = pagesOf(story).length;
     const card = h('button', {class:'big-card', onclick:() => openStory(story.id)}, story.title,
@@ -1444,7 +1562,7 @@ function nextRound(){
   renderRound();
 }
 function sampleText(){
-  const pool = game.part.sample === 'paragraph' ? PARAGRAPHS : SENTENCES;
+  const pool = reader()[game.part.sample] || (game.part.sample === 'paragraph' ? PARAGRAPHS : SENTENCES);
   return pool[game.text % pool.length];
 }
 function renderRound(){
@@ -1519,7 +1637,7 @@ function finishPart(){
   $('gamePlay').hidden = true; $('gameDone').hidden = false;
   $('gameDoneTitle').textContent = changed ? 'This is your new look!' : 'Your look is just right!';
   $('gameKeep').textContent = changed ? 'Keep this look' : 'Done';
-  renderSample($('gameWinner'), best, 'Jessica held the string tight, and up went the kite.', false);
+  renderSample($('gameWinner'), best, reader().winner, false);
   layoutSamples();
   sayPrompt(changed ? 'This is your new look!' : 'Your look is just right!');
 }
@@ -1537,10 +1655,10 @@ function renderLookSummary(){
   const rows = PARTS.filter(p => state.lookLog[p.id]).map(p => {
     const e = state.lookLog[p.id];
     let text = e.changed ? `changed from ${e.from} to ${e.to}, picked twice.` : `kept ${e.from}.`;
-    if (e.wavered) text += ` She picked ${e.wavered} at first, then went back, so it was a close call.`;
+    if (e.wavered) text += ` ${reader().name} picked ${e.wavered} at first, then went back, so it was a close call.`;
     return h('li', null, h('strong', null, `${p.name}, ${niceDate(e.at)}: `), text);
   });
-  $('lookSummary').replaceChildren(...(rows.length ? rows : [h('li', {class:'muted'}, "She hasn't played the games yet.")]));
+  $('lookSummary').replaceChildren(...(rows.length ? rows : [h('li', {class:'muted'}, `${reader().name} hasn't played the games yet.`)]));
 }
 
 /* ---------- Pam's reading checks ---------- */
@@ -1568,7 +1686,18 @@ function finishCheck(){
   show('done');
 }
 function renderPam(){
+  const name = reader().name;
   $('pamSetup').hidden = navigator.standalone !== false;
+  $('pamBack').textContent = `Back to ${name}'s stories`;
+  $('readerSwitch').replaceChildren(...READERS.map(r => h('button', {'aria-pressed':String(r.id === state.reader),
+    onclick:() => { switchReader(r.id); renderPam(); renderLookSummary(); }}, r.name)));
+  $('storiesTitle').textContent = `${name}'s stories`;
+  $('lookTitle').textContent = `${name}'s look`;
+  $('storyHint').textContent = reader().shortPages ? 'Each paragraph gets its own page, so leave a blank line between pages.' : '';
+  $('resetPrefs').textContent = `Reset ${name}'s look`;
+  $('resetPrefsNote').textContent = `Goes back to ${name}'s starting look and clears the game stars. Keeps the stories, where they've got to in them, and the reading checks.`;
+  // The reading-check passages are pitched at Jessica, so they only show for her.
+  $('checkSection').hidden = state.reader !== 'jessica';
   const cs = state.checks, first = cs[0], latest = cs[cs.length - 1];
   $('thenNow').replaceChildren(...(cs.length > 1
     ? [h('p', {class:'then-now'}, `${niceDate(first.at)}: about ${first.wpm} words a minute.`, h('br'), `${niceDate(latest.at)}: about ${latest.wpm} words a minute.`),
@@ -1623,6 +1752,27 @@ function saveStory(){
   clearStoryForm();
   $('storyStatus').textContent = '';
   saveNow(); renderPam();
+}
+
+/* ---------- starting again ---------- */
+function eraseEverything(){
+  if (!confirm("Erase everything saved in Jessential! on this device? This deletes Jessica's and Zachary's stories, their looks, the reading checks, the game results and any saved setups. It can't be undone.")) return;
+  clearTimeout(saveTimer); saveTimer = 0;
+  try { localStorage.removeItem(STORE_KEY); } catch (e) {}
+  location.reload();
+}
+function resetPreferences(){
+  const name = reader().name;
+  if (!confirm(`Reset ${name}'s look? The stories and reading checks are kept.`)) return;
+  state.settings = readerDefaults(state.reader);
+  state.lookLog = {};
+  state.compareId = '';
+  game = null;
+  renderCompare();
+  changed();
+  saveNow();
+  renderPam(); renderLookSummary();
+  $('resetStatus').textContent = `${name}'s look is back to the start. The stories and reading checks are still here.`;
 }
 
 /* ---------- safe copy ---------- */
@@ -1782,7 +1932,8 @@ function init(){
   selectTab(['story','look','aids','setups','test'].includes(state.tab) ? state.tab : 'story');
   setPanelHidden(!!state.panelHidden);
   refreshReader();
-  show(location.hash === '#settings' ? 'advanced' : 'home');
+  show(location.hash === '#settings' ? 'advanced' : 'who');
+  $('notMe').addEventListener('click', () => show('who'));
 
   $('playGame').addEventListener('click', () => show('look'));
   $('lookHome').addEventListener('click', () => show('home'));
@@ -1820,12 +1971,9 @@ function init(){
     storyTimer = setTimeout(() => setStory(e.target.value), 200);
   });
   $('sample').addEventListener('click', useSample);
-  $('wipe').addEventListener('click', () => {
-    if (!confirm('Erase your story, saved setups and results from this browser?')) return;
-    clearTimeout(saveTimer); saveTimer = 0;
-    try { localStorage.removeItem(STORE_KEY); } catch (e) {}
-    location.reload();
-  });
+  $('wipe').addEventListener('click', eraseEverything);
+  $('eraseAll').addEventListener('click', eraseEverything);
+  $('resetPrefs').addEventListener('click', resetPreferences);
   $('tabs').addEventListener('click', e => { if (e.target.id) selectTab(e.target.id.slice(4)); });
   $('tabs').addEventListener('keydown', e => {
     const tabs = [...$('tabs').children], i = tabs.indexOf(e.target);

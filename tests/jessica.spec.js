@@ -34,7 +34,9 @@ test.beforeEach(async ({ page }) => {
   page.on('dialog', d => d.accept());
   await page.addInitScript(stubSpeech);
   await page.goto('/index.html');
+  await page.click('#who-jessica');
 });
+const pickReader = (page, id) => page.click('#who-' + id);
 
 async function holdPamDoor(page) {
   await page.locator('#pamDoor').dispatchEvent('pointerdown');
@@ -50,7 +52,7 @@ const articleText = page => page.locator('#paneA article').innerText();
 const backHome = page => page.click('#pamBack');
 
 test.describe("Jessica's home", () => {
-  test('opens on her stories, with no settings or tabs', async ({ page }) => {
+  test('opens on her stories, with no settings or tabs, after she picks her name', async ({ page }) => {
     await expect(page.getByRole('heading', { name: 'Hello, Jessica!' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'The Runaway Kite' })).toBeVisible();
     await expect(page.getByRole('button', { name: /Which is easier/ })).toBeVisible();
@@ -110,6 +112,7 @@ test.describe('reading a story', () => {
     await page.click('#readHome');
     await expect(page.getByRole('button', { name: /The Runaway Kite.*Page 3 of/ })).toBeVisible();
     await page.reload();
+    await pickReader(page, 'jessica');
     await openKite(page);
     await expect(page.locator('#pageNum')).toHaveText(/^Page 3 of/);
   });
@@ -525,6 +528,7 @@ test.describe("Pam's page", () => {
     await page.getByRole('button', { name: 'Otters' }).click();
     await expect(page.locator('#paneA article')).toContainText('The otter swam.');
     await page.reload();
+    await pickReader(page, 'jessica');
     await expect(page.getByRole('button', { name: 'Otters' })).toBeVisible();
   });
 
@@ -591,6 +595,7 @@ test.describe("Pam's page", () => {
 
     await page.evaluate(() => { clearTimeout(saveTimer); localStorage.clear(); state.stories = []; state.checks = []; state.settings.font = 'arial'; saveNow(); });
     await page.locator('#restoreFile').setInputFiles(file);
+    await pickReader(page, 'jessica');
     await expect(page.getByRole('button', { name: 'Keep me', exact: true })).toBeVisible();
     const after = await page.evaluate(() => ({ font: state.settings.font, checks: state.checks.length }));
     expect(after).toEqual({ font: 'lexend', checks: 1 });
@@ -605,6 +610,60 @@ test.describe("Pam's page", () => {
     expect(await page.evaluate(() => state.stories.length)).toBe(1);
   });
 
+  test('resetting her look keeps her stories and reading checks', async ({ page }) => {
+    await page.evaluate(() => {
+      Object.assign(state.settings, { font: 'lexend', size: 34, stripes: true, ruler: 'mask' });
+      state.lookLog = { size: { at: '2026-11-01T10:00:00Z', from: '20px', to: '34px', changed: true } };
+      state.ttsRate = 1.3;
+      state.stories[0].page = 2;
+      state.checks = [{ id: 'cat', words: 98, ms: 90000, wpm: 65, at: '2026-01-01T10:00:00Z', settings: {} }];
+      changed();
+    });
+    await holdPamDoor(page);
+    await addStory(page, 'Keep me', 'Words to keep.');
+    await page.click('#resetPrefs');
+    await expect(page.locator('#resetStatus')).toContainText('still here');
+    await expect(page.locator('#lookSummary')).toContainText("hasn't played");
+    await page.reload();
+    const s = await page.evaluate(() => ({ settings: state.settings, defaults: DEFAULTS, log: state.lookLog, rate: state.ttsRate,
+      stories: state.stories.map(x => x.title), page: state.stories[0].page, checks: state.checks.length }));
+    expect(s.settings).toEqual(s.defaults);
+    expect(s.log).toEqual({});
+    // Read-aloud speed is shared by both children, so resetting one child's look keeps it.
+    expect(s.rate).toBe(1.3);
+    expect(s.stories).toEqual(['The Runaway Kite', 'Keep me']);
+    expect(s.page).toBe(2);
+    expect(s.checks).toBe(1);
+  });
+
+  test('erasing everything starts again with just the kite story', async ({ page }) => {
+    await page.evaluate(() => {
+      state.settings.font = 'lexend';
+      state.checks = [{ id: 'cat', words: 98, ms: 90000, wpm: 65, at: '2026-01-01T10:00:00Z', settings: {} }];
+    });
+    await holdPamDoor(page);
+    await addStory(page, 'Gone soon', 'Words.');
+    let message = '';
+    page.removeAllListeners('dialog');
+    page.on('dialog', d => { message = d.message(); d.accept(); });
+    await page.click('#eraseAll');
+    await expect(page.locator('#whoView')).toBeVisible();
+    expect(message).toMatch(/stories.*look.*reading checks.*game results/);
+    const s = await page.evaluate(() => ({ font: state.settings.font, stories: state.stories.map(x => x.title), checks: state.checks.length }));
+    expect(s).toEqual({ font: 'arial', stories: ['The Runaway Kite'], checks: 0 });
+  });
+
+  test('saying no to either reset changes nothing', async ({ page }) => {
+    await page.evaluate(() => { state.settings.font = 'lexend'; changed(); });
+    await holdPamDoor(page);
+    page.removeAllListeners('dialog');
+    page.on('dialog', d => d.dismiss());
+    await page.click('#resetPrefs');
+    await page.click('#eraseAll');
+    expect(await page.evaluate(() => state.settings.font)).toBe('lexend');
+    await expect(page.locator('#pamView')).toBeVisible();
+  });
+
   test('ignores damaged saved data', async ({ page }) => {
     await page.evaluate(() => {
       clearTimeout(saveTimer); saveTimer = 0;
@@ -613,6 +672,178 @@ test.describe("Pam's page", () => {
     await page.reload();
     const s = await page.evaluate(() => ({ stories: state.stories.length, checks: state.checks.length }));
     expect(s).toEqual({ stories: 0, checks: 0 });
+  });
+});
+
+test.describe('Zachary', () => {
+  const titles = page => page.locator('#shelf button').allInnerTexts();
+
+  test('the app asks who is reading', async ({ page }) => {
+    await page.reload();
+    await expect(page.getByRole('heading', { name: "Who's reading?" })).toBeVisible();
+    await expect(page.locator('#whoCards button')).toHaveText(['Jessica', 'Zachary']);
+  });
+
+  test('has his own page, with his own story', async ({ page }) => {
+    await page.click('#notMe');
+    await pickReader(page, 'zachary');
+    await expect(page.getByRole('heading', { name: 'Hello, Zachary!' })).toBeVisible();
+    expect(await titles(page)).toEqual(['Zachary and the Big Digger']);
+    await page.click('#notMe');
+    await pickReader(page, 'jessica');
+    expect(await titles(page)).toEqual(['The Runaway Kite']);
+  });
+
+  test('his story has Dad in it, on short pages of one paragraph each', async ({ page }) => {
+    await page.click('#notMe');
+    await pickReader(page, 'zachary');
+    const pages = await page.evaluate(() => pagesOf(state.stories[0]));
+    expect(pages).toHaveLength(11);
+    for (const p of pages) expect(p.paras).toHaveLength(1);
+    const text = pages.flatMap(p => p.paras).join(' ');
+    expect(text).toContain('"I am going to dig a pond," he said.');
+    expect(text).toContain('"Oh no!" said Dad.');
+    expect(text).not.toMatch(/\b(Kit|she|her)\b/);
+    await page.getByRole('button', { name: 'Zachary and the Big Digger' }).click();
+    await expect(page.locator('#pageNum')).toHaveText('Page 1 of 11');
+    await expect(page.locator('#paneA article')).toHaveText(/^Zachary has a little red digger\. It can dig\. Dig, dig, dig!\s*$/);
+  });
+
+  test('starts with big, learner-friendly letters, separate from Jessica', async ({ page }) => {
+    await page.evaluate(() => { state.settings.font = 'lexend'; changed(); });
+    await page.click('#notMe');
+    await pickReader(page, 'zachary');
+    expect(await page.evaluate(() => state.settings)).toMatchObject({ font: 'andika', size: 36 });
+    await page.getByRole('button', { name: 'Zachary and the Big Digger' }).click();
+    expect(await page.locator('#paneA article').evaluate(el => getComputedStyle(el).fontSize)).toBe('36px');
+    await page.click('#readHome');
+    await page.click('#notMe');
+    await pickReader(page, 'jessica');
+    expect((await page.evaluate(() => state.settings)).font).toBe('lexend');
+  });
+
+  test('his games change only his look, and have their own stars', async ({ page }) => {
+    await page.click('#notMe');
+    await pickReader(page, 'zachary');
+    await page.click('#playGame');
+    await page.locator('#parts button', { hasText: 'Size' }).click();
+    await page.evaluate(() => { game.best.size = 40; game.phase = 'confirm'; game.confirms = []; game.challenger = { size: 36 }; });
+    await page.click('#gameSame');
+    await page.click('#gameKeep');
+    await expect(page.locator('#parts button').nth(1)).toHaveAttribute('aria-label', 'Size, played');
+    await page.click('#lookHome');
+    await page.click('#notMe');
+    await pickReader(page, 'jessica');
+    await page.click('#playGame');
+    await expect(page.locator('#parts .star')).toHaveCount(0);
+    expect((await page.evaluate(() => state.settings)).size).toBe(20);
+  });
+
+  test("Pam's page switches between them, and stories go to the right child", async ({ page }) => {
+    await holdPamDoor(page);
+    await expect(page.locator('#storiesTitle')).toHaveText("Jessica's stories");
+    await expect(page.locator('#checkSection')).toBeVisible();
+    await page.locator('#readerSwitch button', { hasText: 'Zachary' }).click();
+    await expect(page.locator('#storiesTitle')).toHaveText("Zachary's stories");
+    await expect(page.locator('#checkSection')).toBeHidden();
+    await expect(page.locator('#storyHint')).toContainText('own page');
+    await expect(page.locator('#pamBack')).toHaveText("Back to Zachary's stories");
+    await addStory(page, 'Big Truck', 'The truck is big.\n\nIt goes beep.');
+    await page.click('#pamBack');
+    await expect(page.getByRole('heading', { name: 'Hello, Zachary!' })).toBeVisible();
+    expect(await titles(page)).toEqual(['Zachary and the Big Digger', 'Big Truck']);
+    await page.getByRole('button', { name: 'Big Truck' }).click();
+    await expect(page.locator('#pageNum')).toHaveText('Page 1 of 2');
+    await page.click('#readHome');
+    await page.click('#notMe');
+    await pickReader(page, 'jessica');
+    expect(await titles(page)).toEqual(['The Runaway Kite']);
+  });
+
+  test('both profiles survive a reload and a safe copy', async ({ page }) => {
+    await page.click('#notMe');
+    await pickReader(page, 'zachary');
+    await page.evaluate(() => { state.settings.size = 40; state.stories[0].page = 4; changed(); });
+    await holdPamDoor(page);
+    const [download] = await Promise.all([page.waitForEvent('download'), page.click('#backup')]);
+    const file = test.info().outputPath('copy.json');
+    await download.saveAs(file);
+    await page.reload();
+    await pickReader(page, 'zachary');
+    expect(await page.evaluate(() => ({ size: state.settings.size, page: state.stories[0].page }))).toEqual({ size: 40, page: 4 });
+    await page.evaluate(() => { clearTimeout(saveTimer); saveTimer = 0; localStorage.clear(); });
+    await holdPamDoor(page);
+    await page.locator('#restoreFile').setInputFiles(file);
+    await pickReader(page, 'zachary');
+    expect(await page.evaluate(() => state.settings.size)).toBe(40);
+  });
+
+  test('data saved before Zachary existed keeps Jessica and adds him', async ({ page }) => {
+    await page.evaluate(() => {
+      clearTimeout(saveTimer); saveTimer = 0;
+      localStorage.setItem(STORE_KEY, JSON.stringify({
+        settings: { ...DEFAULTS, font: 'comic' },
+        stories: [{ id: 'old', title: 'Old story', text: 'Old words.', page: 0, reads: [] }],
+        lookLog: { letters: { at: '2026-11-07T10:00:00Z', from: 'Arial', to: 'Comic Neue', changed: true } },
+      }));
+    });
+    await page.reload();
+    await pickReader(page, 'jessica');
+    expect(await titles(page)).toEqual(['Old story']);
+    expect((await page.evaluate(() => state.settings)).font).toBe('comic');
+    await page.click('#notMe');
+    await pickReader(page, 'zachary');
+    expect(await titles(page)).toEqual(['Zachary and the Big Digger']);
+  });
+
+  test("resetting Zachary's look goes back to his starting look and leaves Jessica's alone", async ({ page }) => {
+    await page.evaluate(() => { state.settings.font = 'lexend'; changed(); });
+    await page.click('#notMe');
+    await pickReader(page, 'zachary');
+    await page.evaluate(() => { state.settings.size = 22; state.settings.font = 'georgia'; changed(); });
+    await holdPamDoor(page);
+    await expect(page.locator('#resetPrefs')).toHaveText("Reset Zachary's look");
+    await page.click('#resetPrefs');
+    expect(await page.evaluate(() => state.settings)).toMatchObject({ font: 'andika', size: 36 });
+    await page.locator('#readerSwitch button', { hasText: 'Jessica' }).click();
+    expect((await page.evaluate(() => state.settings)).font).toBe('lexend');
+  });
+
+  test('his games use his simpler sentences, and Jessica keeps hers', async ({ page }) => {
+    const cardText = () => page.locator('#gameCards button').first().innerText().then(t => t.trim().replace(/\s+/g, ' '));
+    const pools = await page.evaluate(() => ({ z: [...readerInfo('zachary').sentence, ...readerInfo('zachary').paragraph], j: [...SENTENCES, ...PARAGRAPHS] }));
+    for (const sample of pools.z) for (const sentence of sample.split(/(?<=[.!?])\s+/)) {
+      expect(sentence.split(' ').length).toBeLessThanOrEqual(7);
+    }
+    await page.click('#notMe');
+    await pickReader(page, 'zachary');
+    for (const part of ['Letters', 'Helpers']) {
+      await page.click('#playGame');
+      await page.locator('#parts button', { hasText: part }).click();
+      expect(pools.z).toContain(await cardText());
+      await page.click('#gameStop');
+      await page.click('#lookHome');
+    }
+    await page.click('#playGame');
+    await page.locator('#parts button', { hasText: 'Size' }).click();
+    await page.evaluate(() => { game.queue = []; game.ladder.refine = []; game.ladder.cur = 0; game.ladder.dir = 1; game.ladder.step = 0; });
+    await page.click('#gameSame');
+    await expect(page.locator('#gameWinner')).toHaveText('The big digger digs in the mud.');
+    await page.click('#gameKeep');
+    await page.click('#lookHome');
+    await page.click('#notMe');
+    await pickReader(page, 'jessica');
+    await page.click('#playGame');
+    await page.locator('#parts button', { hasText: 'Letters' }).click();
+    expect(pools.j).toContain(await cardText());
+  });
+
+  test('says well done to the right child', async ({ page }) => {
+    await page.click('#notMe');
+    await pickReader(page, 'zachary');
+    await page.getByRole('button', { name: 'Zachary and the Big Digger' }).click();
+    for (let i = 0; i < 11; i++) await page.click('#nextPage');
+    await expect(page.getByRole('heading', { name: 'Well done, Zachary!' })).toBeVisible();
   });
 });
 
