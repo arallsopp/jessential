@@ -5,7 +5,8 @@ module.exports = defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   reporter: 'list',
-  use: { baseURL: 'http://127.0.0.1:4173' },
+  // Service workers would cache the app between tests, so only pwa.spec.js turns them on.
+  use: { baseURL: 'http://127.0.0.1:4173', serviceWorkers: 'block' },
   projects: [
     { name: 'chromium', use: devices['Desktop Chrome'] },
     // Jessica's screens are for an iPad, so they also run in WebKit at iPad size.

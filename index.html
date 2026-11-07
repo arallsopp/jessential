@@ -213,6 +213,9 @@ article p{margin:0 0 calc(var(--r-pg)*1em)}
 .page-bar .page-num{flex:1;text-align:center;color:var(--ui-muted)}
 .page-bar .primary{min-width:9rem}
 .trial #advancedBack{display:none}
+.update-bar{flex:none;display:flex;flex-wrap:wrap;gap:.5rem 1rem;align-items:center;justify-content:center;padding:max(.6rem,env(safe-area-inset-top)) 1rem .6rem;background:var(--ui-soft);border-bottom:1px solid var(--ui-accent);font-size:1.1rem}
+.update-bar p{margin:0}
+.update-bar button{min-height:48px}
 html.immersive body{height:100dvh}
 .reading article{padding-bottom:2rem}
 .reading article,.reading .w{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
@@ -244,6 +247,10 @@ html.immersive body{height:100dvh}
 </style>
 </head>
 <body>
+<div class="update-bar" id="updateBar" role="status" hidden>
+  <p>A new version of Jessential! is ready. Stories and looks are kept.</p>
+  <button id="updateNow" class="primary">Update now</button>
+</div>
 <section class="view" id="whoView" hidden>
   <div class="view-inner">
     <h1 class="home-title">Who's reading?</h1>
@@ -321,7 +328,7 @@ html.immersive body{height:100dvh}
 
     <section class="pam-section pam-setup" id="pamSetup" hidden>
       <h2>Do this first, so nothing gets lost</h2>
-      <p>Safari can delete saved stories and results from a website that hasn't been opened for a week. A Home Screen icon avoids this.</p>
+      <p>Safari can delete saved stories and results from a website that hasn't been opened for a week. Installing Jessential! on the Home Screen avoids this, and lets it open without Wi-Fi.</p>
       <ol>
         <li>Tap the Share button at the top of Safari.</li>
         <li>Tap <strong>Add to Home Screen</strong>, then <strong>Add</strong>.</li>
@@ -384,7 +391,14 @@ html.immersive body{height:100dvh}
       <p class="muted" id="resetStatus" role="status" style="margin:.5rem 0 0"></p>
     </section>
 
+    <section class="pam-section" id="installSection" hidden>
+      <h2>Install Jessential!</h2>
+      <p>Installing keeps the stories safe, and lets it open without Wi-Fi.</p>
+      <button id="installApp" class="primary">Install</button>
+    </section>
+
     <button id="openAdvanced">All settings and tools</button>
+    <p class="muted" id="appVersion" style="margin:1rem 0 0"></p>
   </div>
 </section>
 
@@ -1361,7 +1375,8 @@ function show(name){
   if (inReader){ $('paneB').hidden = true; $('labelA').hidden = true; }
   if (name === 'who') renderWho();
   if (name === 'home') renderShelf();
-  if (name === 'pam'){ renderPam(); renderLookSummary(); }
+  if (name === 'pam'){ renderPam(); renderLookSummary(); showAppVersion(); }
+  showUpdateBar();
   if (name === 'look') renderParts();
   if (name === 'advanced'){
     setStoryControls();
@@ -1754,6 +1769,66 @@ function saveStory(){
   saveNow(); renderPam();
 }
 
+/* ---------- installing and updating ---------- */
+let waitingWorker = null, installPrompt = null, updating = false;
+// Only offer the update between activities, never in the middle of a story or game.
+function showUpdateBar(){
+  $('updateBar').hidden = !(waitingWorker && (currentScreen === 'who' || currentScreen === 'pam'));
+}
+function offerUpdate(worker){
+  // With no controller this is the first install, not an update.
+  if (!worker || !navigator.serviceWorker.controller) return;
+  waitingWorker = worker;
+  showUpdateBar();
+}
+function applyUpdate(){
+  if (!waitingWorker) return;
+  updating = true;
+  saveNow();
+  $('updateNow').disabled = true;
+  waitingWorker.postMessage('update');
+}
+async function showAppVersion(){
+  let label = '';
+  try {
+    const key = (await caches.keys()).find(k => k.startsWith('jessential-'));
+    if (key) label = 'Version ' + key.slice('jessential-'.length);
+  } catch (e) { /* No cache storage: nothing to show. */ }
+  $('appVersion').textContent = label;
+}
+function wireUpdates(){
+  addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    installPrompt = e;
+    $('installSection').hidden = false;
+  });
+  $('installApp').addEventListener('click', async () => {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    try { await installPrompt.userChoice; } catch (e) {}
+    installPrompt = null;
+    $('installSection').hidden = true;
+  });
+  $('updateNow').addEventListener('click', applyUpdate);
+  if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!updating) return;
+    updating = false;
+    location.reload();
+  });
+  navigator.serviceWorker.register('sw.js').then(reg => {
+    if (reg.waiting) offerUpdate(reg.waiting);
+    reg.addEventListener('updatefound', () => {
+      const worker = reg.installing;
+      worker.addEventListener('statechange', () => { if (worker.state === 'installed') offerUpdate(worker); });
+    });
+    // An app on the Home Screen can stay open for days, so check again when it comes back.
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') reg.update().catch(() => {});
+    });
+  }).catch(() => { /* Offline support is a bonus; the app works without it. */ });
+}
+
 /* ---------- starting again ---------- */
 function eraseEverything(){
   if (!confirm("Erase everything saved in Jessential! on this device? This deletes Jessica's and Zachary's stories, their looks, the reading checks, the game results and any saved setups. It can't be undone.")) return;
@@ -1926,6 +2001,7 @@ function fillVoices(){
 /* ---------- wiring ---------- */
 function init(){
   if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+  wireUpdates();
   buildControls();
   $('story').value = state.story;
   renderStoryInfo(); renderCompare(); syncControls(); renderSetups(); renderTest();

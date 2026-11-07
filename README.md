@@ -12,6 +12,12 @@ Push this folder to a GitHub repository. Then go to **Settings → Pages**, and 
 
 To run it locally, use `python3 -m http.server`.
 
+## Releasing an update
+
+The app is installable and works offline. A service worker (`sw.js`) caches the files, and devices spot a new release when the app is next opened. They offer "Update now" on the "Who's reading?" screen and on Pam's page, never during a story or game. Saved stories and looks stay in `localStorage` and are never touched by an update.
+
+Before you push a change, run `npm run stamp`. This sets the version in `sw.js` from the cached files. Without it, devices keep the old version. The tests fail if you forget.
+
 ## Tests
 
 The site has no dependencies, but its browser tests use [Playwright](https://playwright.dev) and need Node and Python 3.
