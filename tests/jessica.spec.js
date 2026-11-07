@@ -200,88 +200,188 @@ test.describe('hearing words', () => {
   });
 });
 
-test.describe('"Which is easier?" game', () => {
-  const rounds = page => page.evaluate(() => GAME_ROUNDS.length);
+test.describe('"Which is easier?" games', () => {
   const card = (page, opt) => page.locator(`#gameCards [data-opt=${opt}]`);
-  const fontOfCard = (page, opt) => card(page, opt).evaluate(el => getComputedStyle(el).fontFamily);
-  async function playAll(page, opts) {
-    for (let i = 0; i < opts.length; i++) {
-      await expect(page.locator('#gameRound')).toHaveText(`Round ${i + 1} of ${opts.length}`);
-      await card(page, opts[i]).click();
+  const lookOf = (page, opt) => card(page, opt).evaluate(el => el._look);
+  async function startPart(page, name) {
+    if (await page.locator('#playGame').isVisible()) await page.click('#playGame');
+    await page.locator('#parts button', { hasText: name }).click();
+    await expect(page.locator('#gameRound')).toHaveText('Round 1');
+  }
+  // Plays like a child with a clear preference: picks the card that scores higher.
+  async function playPart(page, name, score) {
+    await startPart(page, name);
+    const offered = [];
+    while (await page.locator('#gamePlay').isVisible()) {
+      const prev = await page.locator('#gameRound').innerText();
+      const choice = await page.evaluate(src => {
+        const f = eval('(' + src + ')');
+        const [x, y] = [...document.querySelectorAll('#gameCards button')].map(c => ({ opt: c.dataset.opt, s: f(c._look), look: c._look }));
+        return { opt: x.s === y.s ? 'same' : x.s > y.s ? x.opt : y.opt, b: (x.opt === 'b' ? x : y).look, phase: game.phase };
+      }, score.toString());
+      offered.push(choice);
+      if (choice.opt === 'same') await page.click('#gameSame');
+      else await card(page, choice.opt).click();
+      await page.waitForFunction(p => document.querySelector('#gameRound').textContent !== p
+        || !document.querySelector('#gameDone').hidden, prev);
     }
-    await expect(page.locator('#gameDone')).toBeVisible();
+    return offered;
+  }
+  const settings = page => page.evaluate(() => state.settings);
+  const setLook = (page, look) => page.evaluate(l => { Object.assign(state.settings, l); changed(); }, look);
+
+  test('offers five games, and stars the ones she has played', async ({ page }) => {
+    await page.click('#playGame');
+    await expect(page.locator('#parts button')).toHaveText([/Letters/, /Size/, /Spacing/, /Colours/, /Helpers/]);
+    await expect(page.locator('#parts .next')).toHaveText(/Letters/);
+    await playPart(page, 'Letters', () => 0);
+    await page.click('#gameKeep');
+    await expect(page.locator('#parts button').first()).toHaveAttribute('aria-label', 'Letters, played');
+    await expect(page.locator('#parts .next')).toHaveText(/Size/);
+  });
+
+  test('reads the question out when a game starts', async ({ page }) => {
+    await startPart(page, 'Colours');
+    await expect.poll(() => spoken(page)).toEqual(['Which colour is easier on your eyes? Tap it.']);
+  });
+
+  test('starts from her current look', async ({ page }) => {
+    await setLook(page, { font: 'lexend', size: 32, fg: '#14233a', bg: '#dcecfb', stripes: true });
+    await startPart(page, 'Letters');
+    expect(await lookOf(page, 'a')).toMatchObject({ font: 'lexend', size: 32, bg: '#dcecfb', stripes: true });
+    const b = await lookOf(page, 'b');
+    expect(b.font).not.toBe('lexend');
+    expect(b).toMatchObject({ size: 32, bg: '#dcecfb', stripes: true });
+  });
+
+  test('letters: tries every other font, at the same letter height', async ({ page }) => {
+    const offered = await playPart(page, 'Letters', l => (l.font === 'arial' ? 1 : 0));
+    const fonts = offered.map(o => o.b.font);
+    expect(new Set(fonts)).toEqual(new Set(['verdana', 'georgia', 'opendyslexic', 'atkinson', 'lexend', 'andika', 'comic']));
+    await expect(page.locator('#gameDoneTitle')).toHaveText('Your look is just right!');
+    expect(offered.every(o => o.phase === 'explore')).toBe(true);
+  });
+
+  test('letters: cards use the same letter height where the browser supports it', async ({ page }) => {
+    await startPart(page, 'Letters');
+    const r = await card(page, 'a').evaluate(el => ({ ok: CSS.supports('font-size-adjust', '0.5'), v: getComputedStyle(el).fontSizeAdjust }));
+    if (r.ok) expect(r.v).toBe('0.5');
+  });
+
+  test('letters: a font she likes better is checked again before it is kept', async ({ page }) => {
+    const offered = await playPart(page, 'Letters', l => (l.font === 'andika' ? 2 : l.font === 'arial' ? 1 : 0));
+    const last = offered.at(-1);
+    expect(last.phase).toBe('confirm');
+    expect(last.b.font).toBe('arial');
+    await expect(page.locator('#gameDoneTitle')).toHaveText('This is your new look!');
+    expect((await settings(page)).font).toBe('arial');
+    await page.click('#gameKeep');
+    expect((await settings(page)).font).toBe('andika');
+  });
+
+  test('a change she does not pick twice is not kept, and Pam sees it was close', async ({ page }) => {
+    // Prefers Comic Neue at first, then goes back to Arial when asked again.
+    await page.evaluate(() => { window.__confirming = () => game.phase === 'confirm'; });
+    const offered = await playPart(page, 'Letters', l => {
+      if (window.__confirming()) return l.font === 'arial' ? 1 : 0;
+      return l.font === 'comic' ? 1 : 0;
+    });
+    expect(offered.at(-1).phase).toBe('confirm');
+    await expect(page.locator('#gameDoneTitle')).toHaveText('Your look is just right!');
+    await page.click('#gameKeep');
+    expect((await settings(page)).font).toBe('arial');
+    await page.click('#lookHome');
+    await holdPamDoor(page);
+    await expect(page.locator('#lookSummary')).toContainText('kept Arial');
+    await expect(page.locator('#lookSummary')).toContainText('picked Comic Neue at first');
+  });
+
+  test('"They look the same" never changes her look', async ({ page }) => {
+    await playPart(page, 'Colours', () => 0);
+    await page.click('#gameKeep');
+    expect(await settings(page)).toMatchObject({ fg: '#111111', bg: '#ffffff' });
+  });
+
+  for (const [start, target] of [[20, 30], [20, 22], [20, 40], [28, 18], [36, 34]]) {
+    test(`size: from ${start}px, finds ${target}px`, async ({ page }) => {
+      await setLook(page, { size: start });
+      const offered = await playPart(page, 'Size', new Function('l', `return -Math.abs(l.size - ${target})`));
+      expect(offered.length).toBeLessThanOrEqual(8);
+      await page.click('#gameKeep');
+      expect((await settings(page)).size).toBe(target);
+    });
   }
 
-  test('reads the question out when it starts', async ({ page }) => {
-    await page.click('#playGame');
-    await expect.poll(() => spoken(page)).toEqual(['Which one is easier to read? Tap it.']);
-  });
-
-  test('shows the same words in two different looks', async ({ page }) => {
-    await page.click('#playGame');
-    await expect(card(page, 'a')).toHaveText(await card(page, 'b').innerText());
-    expect(await fontOfCard(page, 'a')).toContain('Andika');
-    expect(await fontOfCard(page, 'b')).toContain('Comic Neue');
-  });
-
-  test('the winner of each round goes through to the next', async ({ page }) => {
-    await page.click('#playGame');
-    await card(page, 'b').click();
-    await expect(page.locator('#gameRound')).toHaveText(/^Round 2/);
-    expect(await fontOfCard(page, 'a')).toContain('Comic Neue');
-    expect(await fontOfCard(page, 'b')).toContain('Lexend');
-  });
-
-  test('keeping the look applies every choice and survives a reload', async ({ page }) => {
-    await page.click('#playGame');
-    await playAll(page, ['b', 'a', 'b', 'b', 'b', 'b']);
-    await expect(page.locator('#gameWinner')).toBeVisible();
+  test('spacing: moves up to the spacing she likes', async ({ page }) => {
+    await playPart(page, 'Spacing', l => -Math.abs(l.lh - 2.2));
     await page.click('#gameKeep');
-    await expect(page.locator('#homeView')).toBeVisible();
-    const expected = { font: 'comic', fg: '#14233a', bg: '#dcecfb', size: 30, lh: 2.1, ls: 0.03, ws: 0.15 };
-    expect(await page.evaluate(() => state.settings)).toMatchObject(expected);
-    await page.reload();
-    expect(await page.evaluate(() => state.settings)).toMatchObject(expected);
+    expect(await settings(page)).toMatchObject({ lh: 2.2, ls: 0.04, ws: 0.16 });
   });
 
-  test('"They look the same" keeps the look so far', async ({ page }) => {
-    await page.click('#playGame');
-    await card(page, 'b').click();
-    await expect(page.locator('#gameRound')).toHaveText(/^Round 2/);
-    await page.click('#gameSame');
-    await expect(page.locator('#gameRound')).toHaveText(/^Round 3/);
-    expect(await page.evaluate(() => game.look.font)).toBe('comic');
-  });
-
-  test('keeps her reading aids, and changes nothing unless she keeps the look', async ({ page }) => {
-    await page.evaluate(() => { state.settings.ruler = 'tint'; state.settings.font = 'georgia'; changed(); });
-    await page.click('#playGame');
-    const n = await rounds(page);
-    await playAll(page, Array(n).fill('a'));
-    expect(await page.evaluate(() => state.settings.font)).toBe('georgia');
+  test('spacing: can also go tighter', async ({ page }) => {
+    await setLook(page, { lh: 1.9, ls: 0.02, ws: 0.08 });
+    await playPart(page, 'Spacing', l => -Math.abs(l.lh - 1.4));
     await page.click('#gameKeep');
-    expect(await page.evaluate(() => state.settings)).toMatchObject({ font: 'andika', ruler: 'tint' });
+    expect((await settings(page)).lh).toBe(1.4);
   });
 
-  test('stopping changes nothing, even straight after a tap', async ({ page }) => {
-    await page.click('#playGame');
+  test('colours: tries all the other colours', async ({ page }) => {
+    const offered = await playPart(page, 'Colours', l => (l.bg === '#dcecfb' ? 1 : 0));
+    const bgs = new Set(offered.filter(o => o.phase === 'explore').map(o => o.b.bg));
+    expect(bgs.size).toBe(7);
+    await page.click('#gameKeep');
+    expect(await settings(page)).toMatchObject({ fg: '#14233a', bg: '#dcecfb' });
+  });
+
+  test('helpers: keeps only the aid she prefers, and shows each one', async ({ page }) => {
+    const offered = await playPart(page, 'Helpers', l => (l.stripes ? 1 : 0) - (l.bionic ? 1 : 0) - (l.ruler !== 'off' ? 1 : 0));
+    const tried = offered.filter(o => o.phase === 'explore').map(o => o.b);
+    expect(tried.some(l => l.bionic)).toBe(true);
+    expect(tried.some(l => l.ruler === 'tint')).toBe(true);
+    expect(tried.some(l => l.ruler === 'mask')).toBe(true);
+    expect(offered.filter(o => o.phase === 'confirm')).toHaveLength(1);
+    await page.click('#gameKeep');
+    expect(await settings(page)).toMatchObject({ stripes: true, bionic: false, ruler: 'off' });
+  });
+
+  test('helpers: the cards show stripes, bold starts and the ruler', async ({ page }) => {
+    await setLook(page, { stripes: true, ruler: 'tint', bionic: true });
+    await startPart(page, 'Helpers');
+    const a = card(page, 'a');
+    await expect(a.locator('.w.odd').first()).toBeAttached();
+    await expect(a.locator('.w b').first()).toBeAttached();
+    const band = await a.locator('.band').evaluate(el => ({ h: el.getBoundingClientRect().height, cls: el.className }));
+    expect(band.cls).toContain('band-tint');
+    expect(band.h).toBeGreaterThan(10);
+  });
+
+  test('keeping a game only changes what that game is about', async ({ page }) => {
+    await setLook(page, { font: 'lexend', stripes: true, ruler: 'mask' });
+    await playPart(page, 'Size', l => l.size);
+    await page.click('#gameKeep');
+    expect(await settings(page)).toMatchObject({ font: 'lexend', stripes: true, ruler: 'mask', size: 40 });
+  });
+
+  test('stopping changes nothing and records nothing, even straight after a tap', async ({ page }) => {
+    await startPart(page, 'Letters');
     await card(page, 'b').click();
     await page.click('#gameStop');
     await page.waitForTimeout(400);
-    await expect(page.locator('#homeView')).toBeVisible();
-    expect(await page.evaluate(() => state.settings.font)).toBe('arial');
+    await expect(page.locator('#lookView')).toBeVisible();
+    expect((await settings(page)).font).toBe('arial');
+    expect(await page.evaluate(() => state.lookLog)).toEqual({});
   });
 
   test('a double tap only counts once', async ({ page }) => {
-    await page.click('#playGame');
+    await startPart(page, 'Letters');
     await card(page, 'b').evaluate(el => { el.click(); el.click(); });
-    await expect(page.locator('#gameRound')).toHaveText(/^Round 2/);
+    await expect(page.locator('#gameRound')).toHaveText('Round 2');
     await page.waitForTimeout(400);
-    await expect(page.locator('#gameRound')).toHaveText(/^Round 2/);
+    await expect(page.locator('#gameRound')).toHaveText('Round 2');
   });
 
   test('swaps sides, so she is not led by position', async ({ page }) => {
-    await page.click('#playGame');
+    await startPart(page, 'Letters');
     const firstOpt = v => page.evaluate(r => {
       Math.random = () => r;
       renderRound();
@@ -291,9 +391,47 @@ test.describe('"Which is easier?" game', () => {
     expect(await firstOpt(0.9)).toBe('b');
   });
 
-  test('every look in the game has strong contrast', async ({ page }) => {
-    const lowest = await page.evaluate(() => Math.min(...[CREAM, WHITE, BLUE].map(c => contrast(c.fg, c.bg))));
+  test('cards show only the sample words, with or without a ruler', async ({ page }) => {
+    for (const ruler of ['off', 'tint']) {
+      await page.evaluate(r => { state.settings.ruler = r; changed(); }, ruler);
+      await startPart(page, 'Letters');
+      for (const opt of ['a', 'b']) {
+        const text = (await card(page, opt).innerText()).trim();
+        expect(await page.evaluate(t => SENTENCES.includes(t.replace(/\s+/g, ' ')), text)).toBe(true);
+      }
+      await page.click('#gameStop');
+      await page.click('#lookHome');
+    }
+  });
+
+  test('a card does not stay highlighted after a tap', async ({ page }) => {
+    await startPart(page, 'Letters');
+    await card(page, 'a').hover();
+    const colours = await page.evaluate(() => [...document.querySelectorAll('#gameCards button')].map(b => getComputedStyle(b).borderTopColor));
+    expect(colours[0]).toBe(colours[1]);
+  });
+
+  test('uses new words each round', async ({ page }) => {
+    await startPart(page, 'Letters');
+    const first = await card(page, 'a').innerText();
+    await card(page, 'a').click();
+    await expect(page.locator('#gameRound')).toHaveText('Round 2');
+    expect(await card(page, 'a').innerText()).not.toBe(first);
+  });
+
+  test('every colour in the game has strong contrast', async ({ page }) => {
+    const lowest = await page.evaluate(() => Math.min(...GAME_COLOURS.map(c => contrast(c.fg, c.bg))));
     expect(lowest).toBeGreaterThanOrEqual(7);
+  });
+
+  test("Pam's page shows what each game found", async ({ page }) => {
+    await playPart(page, 'Size', l => -Math.abs(l.size - 30));
+    await page.click('#gameKeep');
+    await page.click('#lookHome');
+    await holdPamDoor(page);
+    await expect(page.locator('#lookSummary')).toContainText('Size');
+    await expect(page.locator('#lookSummary')).toContainText('changed from 20px to 30px, picked twice');
+    await expect(page.locator('#lookNow')).toContainText('30px');
   });
 });
 
@@ -491,8 +629,16 @@ test.describe('fits the iPad', () => {
   }
   test('home', async ({ page }) => { await noSideScroll(page); await bigEnoughButtons(page); });
 
-  test('game', async ({ page }) => {
+  test('game choices', async ({ page }) => {
     await page.click('#playGame');
+    await noSideScroll(page);
+    await bigEnoughButtons(page);
+  });
+
+  test('game, with the largest text and spacing', async ({ page }) => {
+    await page.evaluate(() => { Object.assign(state.settings, { size: 40, lh: 2.6, ls: 0.06, ws: 0.25 }); changed(); });
+    await page.click('#playGame');
+    await page.locator('#parts button', { hasText: 'Helpers' }).click();
     await noSideScroll(page);
     await bigEnoughButtons(page);
     const fit = await page.evaluate(() => [...document.querySelectorAll('#gameSame,#gameCards button')]

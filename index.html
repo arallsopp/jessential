@@ -179,7 +179,17 @@ article p{margin:0 0 calc(var(--r-pg)*1em)}
 .game-round{font-size:1.1rem;color:var(--ui-muted);text-align:center}
 .game-ask{font-size:2rem;line-height:1.2;text-align:center;margin:0;flex:none}
 .game-cards{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:1rem}
-.game-card-choice{width:100%;min-height:220px;padding:1.5rem;border:3px solid var(--ui-line);border-radius:16px;text-align:left;overflow:auto;overflow-wrap:break-word}
+.game-card-choice{position:relative;display:flex;align-items:flex-start;width:100%;min-height:220px;padding:1.5rem;border:3px solid var(--ui-line);border-radius:16px;text-align:left;overflow:hidden;overflow-wrap:break-word}
+.game-card-choice .sample-text{display:block;width:100%}
+.game-winner{position:relative;overflow:hidden}
+.parts{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+.part-tile{position:relative;min-height:120px;padding:1rem 1.25rem;text-align:left;font-size:1.5rem;font-weight:700;line-height:1.25;border:2px solid var(--ui-line);border-radius:14px}
+.part-tile small{display:block;margin-top:.25rem;font-size:1rem;font-weight:400;color:var(--ui-muted)}
+.part-tile.next{border-color:var(--ui-accent);box-shadow:inset 0 0 0 2px var(--ui-accent)}
+.part-tile .star{position:absolute;top:.6rem;right:.6rem;width:36px;height:36px}
+.look-summary{list-style:none;margin:.5rem 0;padding:0}
+.look-summary li{padding:.4rem 0;border-top:1px solid var(--ui-line)}
+.game-card-choice:hover{border-color:var(--ui-line)}
 .game-card-choice:active,.game-card-choice.picked{border-color:var(--ui-accent);box-shadow:0 0 0 3px var(--ui-accent)}
 .game-same{flex:none;align-self:center;min-height:52px;padding:0 1.5rem;font-size:1.1rem}
 .game-done{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.25rem;text-align:center}
@@ -215,6 +225,7 @@ html.immersive body{height:100dvh}
 @media (max-width:640px){
   .game-cards{grid-template-columns:1fr}
   .game-card-choice{min-height:150px}
+  .parts{grid-template-columns:1fr}
   .game-ask,.home-title{font-size:1.75rem}
 }
 @media (max-width:800px){
@@ -229,10 +240,21 @@ html.immersive body{height:100dvh}
 <section class="view" id="homeView" hidden>
   <div class="view-inner">
     <h1 class="home-title">Hello, Jessica!</h1>
-    <button id="playGame" class="big-card game-card">Which is easier?<small>Play a game to find your best look</small></button>
+    <button id="playGame" class="big-card game-card">Which is easier?<small>Play games to find your best look</small></button>
     <h2 class="shelf-title">Your stories</h2>
     <div id="shelf"></div>
     <button id="pamDoor" class="pam-door">Pam's page<small>Press and hold</small></button>
+  </div>
+</section>
+
+<section class="view" id="lookView" hidden>
+  <div class="view-inner">
+    <div class="row" style="justify-content:space-between;margin-bottom:.5rem">
+      <h1 class="home-title" style="margin:0">Which is easier?</h1>
+      <button id="lookHome" style="min-height:52px;font-size:1.1rem">Back</button>
+    </div>
+    <p style="font-size:1.25rem">Play each game to find your best look.</p>
+    <div class="parts" id="parts"></div>
   </div>
 </section>
 
@@ -243,13 +265,13 @@ html.immersive body{height:100dvh}
       <span class="game-round" id="gameRound" role="status"></span>
       <button id="gameHear">Hear this</button>
     </div>
-    <h1 class="game-ask">Which one is easier to read?</h1>
+    <h1 class="game-ask" id="gameAsk"></h1>
     <div class="game-cards" id="gameCards"></div>
     <button class="game-same" id="gameSame">They look the same</button>
   </div>
   <div class="game-done" id="gameDone" hidden>
     <svg class="star" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l3 6.5 7 .9-5.100 4.900 1.300 7L12 17.900 5.800 21.300l1.300-7L2 9.400l7-.9z"/></svg>
-    <h1>This is your look!</h1>
+    <h1 id="gameDoneTitle"></h1>
     <div class="game-winner" id="gameWinner"></div>
     <div class="big-actions">
       <button id="gameKeep" class="primary">Keep this look</button>
@@ -310,6 +332,13 @@ html.immersive body{height:100dvh}
         <button id="cancelEdit" hidden>Cancel</button>
       </div>
       <p class="muted warn" id="storyStatus" role="status" style="margin:.5rem 0 0"></p>
+    </section>
+
+    <section class="pam-section">
+      <h2>Jessica's look</h2>
+      <p id="lookNow"></p>
+      <ul class="look-summary" id="lookSummary"></ul>
+      <p class="muted" style="margin:0">Each game starts from her current look, and only changes it if she picks the change twice. Playing them again every month or two keeps it tuned as her reading grows.</p>
     </section>
 
     <section class="pam-section">
@@ -604,20 +633,52 @@ const CHECKS = [
 "text": "There was a cat on the roof of the school. All the children looked up and pointed. The cat was black, with one white paw. It sat by the chimney and looked down at them all. Mr Lee got a long ladder and went up to get it. He was very slow and very careful. When he got near the top, the cat stood up and had a stretch. Then it ran along the roof and jumped down into a tree. It was on the grass before Mr Lee could turn round. All the children cheered and clapped."
 }
 ];
-const CREAM = {fg:'#1f1c14', bg:'#fdf6e3'}, WHITE = {fg:'#111111', bg:'#ffffff'}, BLUE = {fg:'#14233a', bg:'#dcecfb'};
-// Each round compares the look so far with one change. A round with its own `a` sets both sides.
-const GAME_ROUNDS = [
-  {text:'Pickle ran round and round under the red kite.', a:{font:'andika'}, b:{font:'comic'}},
-  {text:'The little dog shook itself and wagged its tail.', b:{font:'lexend'}},
-  {text:'Up it went, high over the purple heather.', a:CREAM, b:WHITE},
-  {text:'She held the string tight with both hands.', b:BLUE},
-  {text:'They went past the tall trees and over a sandy hill.', a:{size:24}, b:{size:30}},
-  {text:'On the way home, they had two big ice creams.', a:{lh:1.7, ls:0, ws:0}, b:{lh:2.1, ls:0.03, ws:0.15}},
+
+/* ---------- "Which is easier?" games: data ---------- */
+const SIZES = [18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40];
+const SPACINGS = [
+  {lh:1.4, ls:0, ws:0}, {lh:1.6, ls:0, ws:0}, {lh:1.9, ls:0.02, ws:0.08},
+  {lh:2.2, ls:0.04, ws:0.16}, {lh:2.6, ls:0.06, ws:0.25},
 ];
+const GAME_COLOURS = ['White', 'Cream', 'Yellow', 'Peach', 'Pink', 'Green', 'Blue', 'Lilac'].map(n => THEMES.find(t => t.name === n));
+const SENTENCES = [
+  'Pickle ran round and round under the red kite.',
+  'The little dog shook itself and wagged its tail.',
+  'Up it went, high over the purple heather.',
+  'She held the string tight with both hands.',
+  'They went past the tall trees and over a sandy hill.',
+  'On the way home, they had two big ice creams.',
+  'The wind blew the leaves all over the path.',
+  'A big brown owl sat at the top of the tree.',
+  'Pa put on his boots and his green hat.',
+  'The ducks swam to the edge of the pond.',
+  'We had jam on toast and a cup of milk.',
+  'The moon was round and bright in the sky.',
+  'Pickle found a stick and ran off with it.',
+  'Her shoes were full of sand, but she did not stop.',
+  'The rain made big puddles on the road.',
+  'A small red boat bobbed on the water.',
+];
+const PARAGRAPHS = [
+  'The kite went up and up. It looked as small as a strawberry. Jessica held on tight and laughed.',
+  'Pickle ran under the bush. He sniffed and dug and sniffed again. Then he came out with an old ball.',
+  'It was a cold day, so Pa made hot soup. They ate it by the window and watched the snow fall.',
+  'The bus was late. Jessica counted the red cars that went past. She got to nine before the bus came.',
+  'There was a frog in the garden. It sat on a stone by the pond. When Jessica got close, it jumped in.',
+  'At the beach, they built a big sand castle. The sea came in and filled the moat with water.',
+  'The library had a new book about space. Jessica read about the moon and the stars until it was time to go.',
+  'The cake was in the oven. The whole house smelled sweet and warm. Pickle sat by the door and waited.',
+];
+const nearestIdx = (values, v) => values.reduce((best, x, i) => Math.abs(x - v) < Math.abs(values[best] - v) ? i : best, 0);
+function shuffle(list){
+  const a = list.slice();
+  for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
 
 /* ---------- state and storage ---------- */
 function defaultState(){
-  return {story:'', settings:{...DEFAULTS}, setups:seedSetups(), trials:[], passageIdx:0, compareId:'', tab:'story', panelHidden:false, ttsRate:0.9, voice:'', stories:seedStories(), checks:[]};
+  return {story:'', settings:{...DEFAULTS}, setups:seedSetups(), trials:[], passageIdx:0, compareId:'', tab:'story', panelHidden:false, ttsRate:0.9, voice:'', stories:seedStories(), checks:[], lookLog:{}};
 }
 function seedStories(){
   return [{id:'sample', title:SAMPLE_TITLE, text:SAMPLE, page:0, reads:[]}];
@@ -649,6 +710,7 @@ function load(){
       st.trials = Array.isArray(saved.trials) ? saved.trials.map(x => ({...x, settings:cleanSettings(x.settings)})) : [];
       st.stories = cleanStories(saved.stories);
       st.checks = cleanChecks(saved.checks);
+      st.lookLog = saved.lookLog && typeof saved.lookLog === 'object' && !Array.isArray(saved.lookLog) ? saved.lookLog : {};
     }
   } catch (e) { /* Unreadable or blocked storage: start with defaults. */ }
   return st;
@@ -864,7 +926,10 @@ function syncScroll(src){
   other.scroller.scrollTop = range > 0 ? src.scroller.scrollTop / range * (other.scroller.scrollHeight - other.scroller.clientHeight) : 0;
   requestAnimationFrame(() => { syncing = false; });
 }
-if (document.fonts) document.fonts.addEventListener('loadingdone', () => { schedule(A); schedule(B); });
+if (document.fonts) document.fonts.addEventListener('loadingdone', () => {
+  schedule(A); schedule(B);
+  if (currentScreen === 'game') layoutSamples();
+});
 
 /* ---------- rendering the app ---------- */
 let storyParas = toParas(state.story);
@@ -1189,7 +1254,7 @@ function applyLink(){
 }
 
 /* ---------- screens ---------- */
-const VIEWS = {home:'homeView', game:'gameView', done:'doneView', pam:'pamView'};
+const VIEWS = {home:'homeView', look:'lookView', game:'gameView', done:'doneView', pam:'pamView'};
 function show(name){
   stopSpeech();
   currentScreen = name;
@@ -1204,7 +1269,8 @@ function show(name){
   $('checkBar').hidden = name !== 'check';
   if (inReader){ $('paneB').hidden = true; $('labelA').hidden = true; }
   if (name === 'home') renderShelf();
-  if (name === 'pam') renderPam();
+  if (name === 'pam'){ renderPam(); renderLookSummary(); }
+  if (name === 'look') renderParts();
   if (name === 'advanced'){
     setStoryControls();
     refreshReader();
@@ -1263,57 +1329,218 @@ function nextPage(){
   show('done');
 }
 
-/* ---------- "Which is easier?" game ---------- */
-let game = null;
-function startGame(){
-  game = {look:{...state.settings, ...CREAM, font:'andika', size:24, lh:1.7, ls:0, ws:0, align:'left'}, round:0};
-  $('gameDone').hidden = true; $('gamePlay').hidden = false;
-  show('game');
-  renderRound();
-  sayPrompt('Which one is easier to read? Tap it.');
+/* ---------- "Which is easier?" games ---------- */
+// A ladder over ordered values, such as sizes. It starts at the current value and
+// steps towards whatever she picks. When she stops moving, it tries halfway points.
+function ladder(start, step){ return {cur:start, step, dir:1, moved:false, triedDown:false, refine:null, pending:null}; }
+function ladderNext(L, n){
+  if (!L.refine){
+    const c = Math.max(0, Math.min(n - 1, L.cur + L.dir * L.step));
+    if (c !== L.cur) return L.pending = c;
+    if (!L.moved && L.dir === 1 && !L.triedDown){ L.dir = -1; L.triedDown = true; return ladderNext(L, n); }
+    L.refine = ladderRefine(L);
+  }
+  while (L.refine.length){
+    const c = L.refine.shift();
+    if (c >= 0 && c < n && c !== L.cur) return L.pending = c;
+  }
+  return null;
 }
-function roundLooks(round, look){
-  return {a:{...look, ...(round.a || {})}, b:{...look, ...round.b}};
+function ladderResult(L, won){
+  const c = L.pending;
+  L.pending = null;
+  if (L.refine){ if (won){ L.cur = c; L.refine = []; } return; }
+  if (won){ L.cur = c; L.moved = true; return; }
+  if (!L.moved && L.dir === 1 && !L.triedDown){ L.dir = -1; L.triedDown = true; return; }
+  L.refine = ladderRefine(L);
+}
+function ladderRefine(L){
+  const half = Math.floor(L.step / 2);
+  return half ? [L.cur + L.dir * half, L.cur - L.dir * half] : [];
+}
+const spacingIdx = s => nearestIdx(SPACINGS.map(x => x.lh), s.lh);
+const colourName = s => (themeOf(s) || {}).name || `${s.fg} on ${s.bg}`;
+function helpersLabel(s){
+  const on = [s.bionic && 'bold word starts', s.stripes && 'line stripes',
+    s.ruler === 'tint' && 'reading ruler', s.ruler === 'mask' && 'line focus'].filter(Boolean);
+  return on.length ? on.join(', ') : 'no helpers';
+}
+// Each game starts from her current look. `next` offers one change to the look so far,
+// and returns null when there is nothing left to try.
+const PARTS = [
+  {id:'letters', name:'Letters', note:'Try different letter shapes', ask:'Which letters are easier to read?',
+    sample:'sentence', keys:['font'], sameHeight:true, describe:s => fontOf(s).name,
+    start(g){ g.queue = shuffle(FONTS.map(f => f.id).filter(id => id !== g.base.font)).map(font => ({font})); },
+    next:g => g.queue.shift() || null},
+  {id:'size', name:'Size', note:'Bigger or smaller?', ask:'Which size is easier to read?',
+    sample:'sentence', keys:['size'], describe:s => s.size + 'px',
+    start(g){ g.ladder = ladder(nearestIdx(SIZES, g.base.size), 3); },
+    next(g){ const i = ladderNext(g.ladder, SIZES.length); return i == null ? null : {size:SIZES[i]}; },
+    result:(g, won) => ladderResult(g.ladder, won)},
+  {id:'spacing', name:'Spacing', note:'More room, or less?', ask:'Which one is easier to read?',
+    sample:'paragraph', keys:['lh', 'ls', 'ws'], describe:s => `line spacing ${s.lh.toFixed(1)}`,
+    start(g){ g.ladder = ladder(spacingIdx(g.base), 1); },
+    next(g){ const i = ladderNext(g.ladder, SPACINGS.length); return i == null ? null : {...SPACINGS[i]}; },
+    result:(g, won) => ladderResult(g.ladder, won)},
+  {id:'colours', name:'Colours', note:'Find your best colour', ask:'Which colour is easier on your eyes?',
+    sample:'sentence', keys:['fg', 'bg'], describe:colourName,
+    start(g){ g.queue = shuffle(GAME_COLOURS.filter(t => t.fg !== g.base.fg || t.bg !== g.base.bg)).map(t => ({fg:t.fg, bg:t.bg})); },
+    next:g => g.queue.shift() || null},
+  {id:'helpers', name:'Helpers', note:'Things that help you keep your place', ask:'Which one is easier to read?',
+    sample:'paragraph', keys:['bionic', 'stripes', 'ruler'], eachKey:true, describe:helpersLabel,
+    start(g){
+      g.queue = [{bionic:!g.base.bionic}, {stripes:!g.base.stripes},
+        ...RULERS.filter(r => r.id !== g.base.ruler).map(r => ({ruler:r.id}))];
+    },
+    next:g => g.queue.shift() || null},
+];
+const MAX_ROUNDS = 16;
+let game = null;
+
+function renderParts(){
+  const log = state.lookLog;
+  const next = PARTS.find(p => !log[p.id]);
+  $('parts').replaceChildren(...PARTS.map(p => {
+    const tile = h('button', {class:'part-tile' + (p === next ? ' next' : ''), onclick:() => startPart(p.id)},
+      p.name, h('small', null, p.note));
+    if (log[p.id]){
+      tile.insertAdjacentHTML('beforeend', '<svg class="star" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l3 6.500 7 .9-5.100 4.900 1.300 7L12 17.900 5.800 21.300l1.300-7L2 9.400l7-.9z"/></svg>');
+      tile.setAttribute('aria-label', `${p.name}, played`);
+    }
+    return tile;
+  }));
+}
+function pickKeys(look, keys){ const out = {}; for (const k of keys) out[k] = look[k]; return out; }
+const sameOn = (a, b, keys) => keys.every(k => a[k] === b[k]);
+
+function startPart(id){
+  const part = PARTS.find(p => p.id === id), base = {...state.settings};
+  game = {part, base, best:{...base}, phase:'explore', round:0, text:Math.floor(Math.random() * 16), firstPick:null};
+  part.start(game);
+  $('gameDone').hidden = true; $('gamePlay').hidden = false;
+  $('gameAsk').textContent = part.ask;
+  show('game');
+  nextRound();
+  sayPrompt(part.ask + ' Tap it.');
+}
+// Before keeping a change, ask once more with the original look, on new words and new sides.
+function confirmations(){
+  const {part, base, best} = game;
+  if (part.eachKey) return part.keys.filter(k => best[k] !== base[k]).map(k => ({[k]:base[k]}));
+  return sameOn(best, base, part.keys) ? [] : [pickKeys(base, part.keys)];
+}
+function nextRound(){
+  let challenger = null;
+  if (game.phase === 'explore' && game.round < MAX_ROUNDS) challenger = game.part.next(game);
+  if (!challenger && game.phase === 'explore'){
+    game.phase = 'confirm';
+    game.firstPick = {...game.best};
+    game.confirms = confirmations();
+  }
+  if (!challenger && game.phase === 'confirm') challenger = game.confirms.shift() || null;
+  if (!challenger){ finishPart(); return; }
+  game.challenger = challenger;
+  game.text++;
+  renderRound();
+}
+function sampleText(){
+  const pool = game.part.sample === 'paragraph' ? PARAGRAPHS : SENTENCES;
+  return pool[game.text % pool.length];
 }
 function renderRound(){
-  const round = GAME_ROUNDS[game.round], looks = roundLooks(round, game.look);
+  const looks = {a:game.best, b:{...game.best, ...game.challenger}}, text = sampleText();
   const card = opt => {
-    const el = h('button', {class:'game-card-choice', onclick:() => pick(opt, el)}, round.text);
+    const el = h('button', {class:'game-card-choice', onclick:() => pick(opt, el)});
     el.dataset.opt = opt;
-    lookStyle(el, looks[opt]);
+    renderSample(el, looks[opt], text, game.part.sameHeight);
     return el;
   };
-  // Swap sides at random so the same side isn't always the look so far.
+  // Swap sides at random so the look so far isn't always on the same side.
   const order = Math.random() < 0.5 ? ['a', 'b'] : ['b', 'a'];
   $('gameCards').replaceChildren(...order.map(card));
-  $('gameRound').textContent = `Round ${game.round + 1} of ${GAME_ROUNDS.length}`;
+  $('gameRound').textContent = `Round ${game.round + 1}`;
+  layoutSamples();
+}
+function renderSample(el, look, text, sameHeight){
+  lookStyle(el, look);
+  el.style.setProperty('--r-fg', look.fg);
+  el.style.setProperty('--r-bg', look.bg);
+  // In the letters game, every font gets the same letter height, so she compares shapes, not sizes.
+  el.style.fontSizeAdjust = sameHeight ? '0.5' : '';
+  el.style.textAlign = look.align === 'justify' ? 'justify' : 'left';
+  const words = text.split(/\s+/).map((w, i) => wordSpan(w, look.bionic, i));
+  el.replaceChildren(h('span', {class:'sample-text'}, ...words));
+  if (look.ruler !== 'off') el.append(h('span', {class:'band band-' + look.ruler, 'aria-hidden':'true'}));
+  el._look = look;
+}
+// Stripes and the ruler depend on where lines break, so place them after layout.
+function layoutSamples(){
+  requestAnimationFrame(() => document.querySelectorAll('.game-card-choice, #gameWinner').forEach(el => {
+    const look = el._look;
+    if (!look) return;
+    const lines = [];
+    el.querySelectorAll('.w').forEach(w => {
+      const t = w.offsetTop;
+      if (!lines.length || Math.abs(t - lines[lines.length - 1].t) > 2) lines.push({t, h:w.offsetHeight});
+      w.classList.toggle('odd', look.stripes && lines.length % 2 === 0);
+    });
+    const band = el.querySelector('.band');
+    if (band && lines.length){
+      const ln = lines[Math.min(1, lines.length - 1)];
+      const lh = parseFloat(getComputedStyle(el).lineHeight) || look.size * look.lh;
+      band.style.top = (ln.t + ln.h / 2 - lh / 2) + 'px';
+      band.style.height = lh + 'px';
+    }
+  }));
 }
 function pick(opt, el){
-  if (game.locked) return;
+  if (!game || game.locked) return;
   game.locked = true;
   if (el) el.classList.add('picked');
   const current = game;
   setTimeout(() => {
     if (game !== current) return;
     game.locked = false;
-    game.look = roundLooks(GAME_ROUNDS[game.round], game.look)[opt];
+    // While exploring, a tie keeps the look so far. When confirming, the challenger is
+    // the original look, so a tie goes back to it: only a clear preference changes her look.
+    const won = game.phase === 'confirm' ? opt !== 'a' : opt === 'b';
+    if (game.phase === 'explore' && game.part.result) game.part.result(game, won);
+    if (won) game.best = {...game.best, ...game.challenger};
     game.round++;
-    if (game.round < GAME_ROUNDS.length) renderRound();
-    else finishGame();
+    nextRound();
   }, 250);
 }
-function finishGame(){
+function finishPart(){
+  const {part, base, best, firstPick} = game, changed = !sameOn(best, base, part.keys);
+  const entry = {at:new Date().toISOString(), from:part.describe(base), to:part.describe(best), changed};
+  if (firstPick && !sameOn(firstPick, best, part.keys)) entry.wavered = part.describe(firstPick);
+  state.lookLog[part.id] = entry;
+  save();
   $('gamePlay').hidden = true; $('gameDone').hidden = false;
-  lookStyle($('gameWinner'), game.look);
-  $('gameWinner').textContent = 'Jessica held the string tight, and up went the kite.';
-  sayPrompt('This is your look!');
+  $('gameDoneTitle').textContent = changed ? 'This is your new look!' : 'Your look is just right!';
+  $('gameKeep').textContent = changed ? 'Keep this look' : 'Done';
+  renderSample($('gameWinner'), best, 'Jessica held the string tight, and up went the kite.', false);
+  layoutSamples();
+  sayPrompt(changed ? 'This is your new look!' : 'Your look is just right!');
 }
 function keepLook(){
-  state.settings = cleanSettings(game.look);
+  const {part, best} = game;
+  Object.assign(state.settings, pickKeys(best, part.keys));
+  state.settings = cleanSettings(state.settings);
   game = null;
   changed();
   saveNow();
-  show('home');
+  show('look');
+}
+function renderLookSummary(){
+  $('lookNow').textContent = 'Now: ' + autoLabel(state.settings) + '.';
+  const rows = PARTS.filter(p => state.lookLog[p.id]).map(p => {
+    const e = state.lookLog[p.id];
+    let text = e.changed ? `changed from ${e.from} to ${e.to}, picked twice.` : `kept ${e.from}.`;
+    if (e.wavered) text += ` She picked ${e.wavered} at first, then went back, so it was a close call.`;
+    return h('li', null, h('strong', null, `${p.name}, ${niceDate(e.at)}: `), text);
+  });
+  $('lookSummary').replaceChildren(...(rows.length ? rows : [h('li', {class:'muted'}, "She hasn't played the games yet.")]));
 }
 
 /* ---------- Pam's reading checks ---------- */
@@ -1557,12 +1784,14 @@ function init(){
   refreshReader();
   show(location.hash === '#settings' ? 'advanced' : 'home');
 
-  $('playGame').addEventListener('click', startGame);
-  $('gameStop').addEventListener('click', () => { game = null; show('home'); });
-  $('gameHear').addEventListener('click', () => sayPrompt('Which one is easier to read? Tap it.'));
-  $('gameSame').addEventListener('click', () => pick('a'));
+  $('playGame').addEventListener('click', () => show('look'));
+  $('lookHome').addEventListener('click', () => show('home'));
+  $('gameStop').addEventListener('click', () => { game = null; show('look'); });
+  $('gameHear').addEventListener('click', () => { if (game) sayPrompt(game.part.ask + ' Tap it.'); });
+  $('gameSame').addEventListener('click', () => pick('same'));
   $('gameKeep').addEventListener('click', keepLook);
-  $('gameAgain').addEventListener('click', startGame);
+  $('gameAgain').addEventListener('click', () => startPart(game.part.id));
+  addEventListener('resize', () => { if (currentScreen === 'game') layoutSamples(); });
   $('readHome').addEventListener('click', () => { save(); show('home'); });
   $('listen').addEventListener('click', toggleSpeech);
   $('prevPage').addEventListener('click', () => { reading.story.page--; showPage(); });
